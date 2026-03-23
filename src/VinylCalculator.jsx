@@ -687,13 +687,19 @@ export default function VinylCalculator() {
     // Setup cost (fixed)
     const setupCostExVat = setupCost;
 
-    // Total cost per sticker (all-in)
-    const rawTotalCostExVat = rawMaterialExVat + cutCostExVat + inkCostExVat + setupCostExVat;
-    const rawTotalCostIncVat = rawTotalCostExVat * (1 + vatRate / 100);
-    const totalCostExVat = Math.round(rawTotalCostExVat * 100) / 100;
-    const totalCostIncVat = Math.round(rawTotalCostIncVat * 100) / 100;
-    const totalCostPerPrintExVat = quantity > 0 ? Math.round((rawTotalCostExVat / quantity) * 100) / 100 : 0;
-    const totalCostPerPrintIncVat = quantity > 0 ? Math.round((rawTotalCostIncVat / quantity) * 100) / 100 : 0;
+    // Production cost per sticker (vinyl + cutting + ink, NOT setup)
+    // Setup is a fixed cost added on top, not marked up
+    const rawProductionCostExVat = rawMaterialExVat + cutCostExVat + inkCostExVat;
+    const rawProductionCostIncVat = rawProductionCostExVat * (1 + vatRate / 100);
+    const productionCostExVat = Math.round(rawProductionCostExVat * 100) / 100;
+    const productionCostIncVat = Math.round(rawProductionCostIncVat * 100) / 100;
+    const costPerPrintAllInExVat = quantity > 0 ? Math.round((rawProductionCostExVat / quantity) * 100) / 100 : 0;
+    const costPerPrintAllInIncVat = quantity > 0 ? Math.round((rawProductionCostIncVat / quantity) * 100) / 100 : 0;
+
+    // Total job cost (production + setup)
+    const setupCostIncVat = Math.round(setupCostExVat * (1 + vatRate / 100) * 100) / 100;
+    const totalCostExVat = Math.round((rawProductionCostExVat + setupCostExVat) * 100) / 100;
+    const totalCostIncVat = Math.round((rawProductionCostIncVat + setupCostIncVat) * 100) / 100;
 
     // Order summary
     const rollsNeeded = totalPerRoll > 0 ? Math.ceil(quantity / totalPerRoll) : 0;
@@ -703,13 +709,13 @@ export default function VinylCalculator() {
     const applicableTier = sortedTiers.find((t) => orderMetres >= t.minMetres);
     const appliedDiscount = applicableTier ? applicableTier.discount : 0;
 
-    // Pricing rows — based on TOTAL cost per print (not just vinyl)
+    // Pricing rows — based on production cost per print (setup added separately)
     const pricingRows = multipliers.map((mul) => {
-      const unitPriceExVat = totalCostPerPrintExVat * mul.value;
-      const unitPriceIncVat = totalCostPerPrintIncVat * mul.value;
+      const unitPriceExVat = costPerPrintAllInExVat * mul.value;
+      const unitPriceIncVat = costPerPrintAllInIncVat * mul.value;
       const marginPercent =
         unitPriceExVat > 0
-          ? ((unitPriceExVat - totalCostPerPrintExVat) / unitPriceExVat) * 100
+          ? ((unitPriceExVat - costPerPrintAllInExVat) / unitPriceExVat) * 100
           : 0;
 
       const bulkPrices = discountTiers.map((tier) => ({
@@ -769,13 +775,16 @@ export default function VinylCalculator() {
       totalPerRoll,
       costPerPrintExVat,
       costPerPrintIncVat,
-      totalCostPerPrintExVat,
-      totalCostPerPrintIncVat,
+      costPerPrintAllInExVat,
+      costPerPrintAllInIncVat,
+      productionCostExVat,
+      productionCostIncVat,
       totalCostExVat,
       totalCostIncVat,
       cutCostExVat,
       inkCostExVat,
       setupCostExVat,
+      setupCostIncVat,
       cutTimeSecs,
       orderMetres,
       pricingRows,
@@ -1146,8 +1155,8 @@ export default function VinylCalculator() {
             <div className="grid grid-cols-2 gap-3">
               <StatCard
                 label="Total cost per sticker"
-                value={fmt(calc.totalCostPerPrintIncVat)}
-                sub={`${fmt(calc.totalCostPerPrintExVat)} ex-VAT`}
+                value={fmt(calc.costPerPrintAllInIncVat)}
+                sub={`${fmt(calc.costPerPrintAllInExVat)} ex-VAT`}
               />
               <StatCard
                 label="Vinyl only per sticker"
@@ -1229,9 +1238,9 @@ export default function VinylCalculator() {
               <>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <StatCard
-                    label="Total cost per sticker"
-                    value={fmt(calc.totalCostPerPrintIncVat)}
-                    sub={`${fmt(calc.totalCostPerPrintExVat)} ex-VAT`}
+                    label="Cost per sticker"
+                    value={fmt(calc.costPerPrintAllInIncVat)}
+                    sub={`${fmt(calc.costPerPrintAllInExVat)} ex-VAT`}
                   />
                   <StatCard
                     label="Total job cost"
@@ -1258,8 +1267,12 @@ export default function VinylCalculator() {
                     <span>Ink</span>
                     <span>{fmt(calc.inkCostExVat)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Setup</span>
+                  <div className="flex justify-between font-semibold text-gray-700 border-t border-gray-200 pt-1 mt-1">
+                    <span>Production (marked up)</span>
+                    <span>{fmt(calc.productionCostExVat)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600 mt-1">
+                    <span>Setup (fixed, not marked up)</span>
                     <span>{fmt(calc.setupCostExVat)}</span>
                   </div>
                   <div className="flex justify-between font-semibold text-gray-800 border-t border-gray-200 pt-1 mt-1">
@@ -1292,7 +1305,7 @@ export default function VinylCalculator() {
                       {calc.pricingRows.map((row) => {
                         const discountMul = 1 - calc.appliedDiscount / 100;
                         const unitSell = row.unitPriceExVat * discountMul;
-                        const revenue = unitSell * quantity;
+                        const revenue = unitSell * quantity + calc.setupCostExVat;
                         const profit = revenue - calc.totalCostExVat;
                         const margin =
                           revenue > 0 ? (profit / revenue) * 100 : 0;
