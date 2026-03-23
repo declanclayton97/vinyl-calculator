@@ -647,14 +647,12 @@ export default function VinylCalculator() {
     const orderLengthMm = orderRows * rollFit.printRowH + mat.wastePerCut;
     const orderMetres = orderLengthMm / 1000;
 
-    // ── Cost per print (based on actual vinyl consumed) ─────────────
-    // Includes cut waste and unfilled rows — divides the total vinyl
-    // cost for this order by the quantity, so it reflects what you
-    // actually pay, not a theoretical optimum.
-    const orderCostExVat = orderLengthMm * costPerMm_exVat;
-    const orderCostIncVat = orderLengthMm * costPerMm_incVat;
-    const costPerPrintExVat = quantity > 0 ? Math.round((orderCostExVat / quantity) * 100) / 100 : 0;
-    const costPerPrintIncVat = quantity > 0 ? Math.round((orderCostIncVat / quantity) * 100) / 100 : 0;
+    // ── Cost per print (stable, quantity-independent) ─────────────
+    // Based on roll length one print occupies (row height / prints across).
+    // Cut waste is a fixed per-job cost shown separately in the order summary.
+    const lengthPerPrint = printsAcross > 0 ? rollFit.printRowH / printsAcross : 0;
+    const costPerPrintExVat = Math.round(lengthPerPrint * costPerMm_exVat * 100) / 100;
+    const costPerPrintIncVat = Math.round(lengthPerPrint * costPerMm_incVat * 100) / 100;
 
     // Order summary — find applicable discount based on metres used
     const sortedTiers = [...discountTiers].sort(
@@ -682,10 +680,10 @@ export default function VinylCalculator() {
       return { multiplier: mul.value, label: mul.label, unitPriceExVat, unitPriceIncVat, marginPercent, bulkPrices };
     });
 
-    // Material cost = cost per print × quantity
+    // Material cost = actual vinyl consumed (including cut waste + unfilled rows)
     const rollsNeeded = totalPerRoll > 0 ? Math.ceil(quantity / totalPerRoll) : 0;
-    const materialCostExVat = costPerPrintExVat * quantity;
-    const materialCostIncVat = costPerPrintIncVat * quantity;
+    const materialCostExVat = Math.round(orderLengthMm * costPerMm_exVat * 100) / 100;
+    const materialCostIncVat = Math.round(orderLengthMm * costPerMm_incVat * 100) / 100;
 
     // Custom length fitting — try both orientations, exact and +1 row each,
     // then pick the option whose actual length is closest to the target
