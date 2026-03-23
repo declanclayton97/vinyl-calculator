@@ -647,14 +647,23 @@ export default function VinylCalculator() {
     const orderLengthMm = orderRows * rollFit.printRowH + mat.wastePerCut;
     const orderMetres = orderLengthMm / 1000;
 
-    // ── Cost per print (stable, quantity-independent) ─────────────
-    // Based on roll length one print occupies (row height / prints across).
-    // Cut waste is a fixed per-job cost shown separately in the order summary.
-    const lengthPerPrint = printsAcross > 0 ? rollFit.printRowH / printsAcross : 0;
-    const costPerPrintExVat = Math.round(lengthPerPrint * costPerMm_exVat * 100) / 100;
-    const costPerPrintIncVat = Math.round(lengthPerPrint * costPerMm_incVat * 100) / 100;
+    // ── Cost per print (actual vinyl consumed / quantity) ──────────
+    // Includes cut waste, unfilled rows — the real cost per sticker.
+    // More stickers = cheaper each, because fixed costs are shared.
+    const materialCostExVat = Math.round(orderLengthMm * costPerMm_exVat * 100) / 100;
+    const materialCostIncVat = Math.round(orderLengthMm * costPerMm_incVat * 100) / 100;
+    const costPerPrintExVat = quantity > 0 ? Math.round((materialCostExVat / quantity) * 100) / 100 : 0;
+    const costPerPrintIncVat = quantity > 0 ? Math.round((materialCostIncVat / quantity) * 100) / 100 : 0;
 
-    // Order summary — find applicable discount based on metres used
+    // Waste breakdown for transparency
+    const vinylPerPrintMm = printsAcross > 0 ? rollFit.printRowH / printsAcross : 0;
+    const printVinylExVat = Math.round(vinylPerPrintMm * costPerMm_exVat * quantity * 100) / 100;
+    const wasteCostExVat = Math.round((materialCostExVat - printVinylExVat) * 100) / 100;
+    const printVinylIncVat = Math.round(vinylPerPrintMm * costPerMm_incVat * quantity * 100) / 100;
+    const wasteCostIncVat = Math.round((materialCostIncVat - printVinylIncVat) * 100) / 100;
+
+    // Order summary
+    const rollsNeeded = totalPerRoll > 0 ? Math.ceil(quantity / totalPerRoll) : 0;
     const sortedTiers = [...discountTiers].sort(
       (a, b) => b.minMetres - a.minMetres
     );
@@ -679,15 +688,6 @@ export default function VinylCalculator() {
 
       return { multiplier: mul.value, label: mul.label, unitPriceExVat, unitPriceIncVat, marginPercent, bulkPrices };
     });
-
-    // Material cost breakdown
-    const rollsNeeded = totalPerRoll > 0 ? Math.ceil(quantity / totalPerRoll) : 0;
-    const printMaterialExVat = Math.round(costPerPrintExVat * quantity * 100) / 100;
-    const printMaterialIncVat = Math.round(costPerPrintIncVat * quantity * 100) / 100;
-    const materialCostExVat = Math.round(orderLengthMm * costPerMm_exVat * 100) / 100;
-    const materialCostIncVat = Math.round(orderLengthMm * costPerMm_incVat * 100) / 100;
-    const wasteCostExVat = Math.round((materialCostExVat - printMaterialExVat) * 100) / 100;
-    const wasteCostIncVat = Math.round((materialCostIncVat - printMaterialIncVat) * 100) / 100;
 
     // Custom length fitting — try both orientations, exact and +1 row each,
     // then pick the option whose actual length is closest to the target
@@ -740,8 +740,6 @@ export default function VinylCalculator() {
       pricingRows,
       appliedDiscount,
       rollsNeeded,
-      printMaterialExVat,
-      printMaterialIncVat,
       materialCostExVat,
       materialCostIncVat,
       wasteCostExVat,
@@ -1178,32 +1176,28 @@ export default function VinylCalculator() {
               </p>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <StatCard
+                    label="Cost per sticker"
+                    value={fmt(calc.costPerPrintIncVat)}
+                    sub={`${fmt(calc.costPerPrintExVat)} ex-VAT`}
+                  />
                   <StatCard
                     label="Vinyl used"
                     value={`${calc.orderMetres.toFixed(2)}m`}
-                    sub={`${calc.rollsNeeded} roll${calc.rollsNeeded !== 1 ? "s" : ""} needed`}
+                    sub={`${calc.rollsNeeded} roll${calc.rollsNeeded !== 1 ? "s" : ""}`}
                   />
                   <StatCard
-                    label="Total material cost"
+                    label="Total material"
                     value={fmt(calc.materialCostIncVat)}
                     sub={`${fmt(calc.materialCostExVat)} ex-VAT`}
                   />
                 </div>
-                <div className="bg-gray-50 rounded-xl px-4 py-3 mb-4 text-sm space-y-1">
-                  <div className="flex justify-between text-gray-600">
-                    <span>Print material ({quantity} x {fmt(calc.costPerPrintIncVat)})</span>
-                    <span>{fmt(calc.printMaterialIncVat)}</span>
+                {calc.wasteCostIncVat > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 mb-4 text-sm text-amber-700">
+                    Includes {fmt(calc.wasteCostIncVat)} waste (cut + unfilled row) — order {calc.printsAcross > 1 ? `in multiples of ${calc.printsAcross}` : "more"} to reduce waste per sticker
                   </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Waste (cut + unfilled row)</span>
-                    <span>{fmt(calc.wasteCostIncVat)}</span>
-                  </div>
-                  <div className="flex justify-between font-semibold text-gray-800 border-t border-gray-200 pt-1 mt-1">
-                    <span>Total</span>
-                    <span>{fmt(calc.materialCostIncVat)}</span>
-                  </div>
-                </div>
+                )}
 
                 {calc.appliedDiscount > 0 && (
                   <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-2 mb-4 text-sm text-green-700 font-medium">
