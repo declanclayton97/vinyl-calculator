@@ -619,14 +619,6 @@ export default function VinylCalculator() {
     const rowsPerRoll = rollFit.rows;
     const totalPerRoll = rollFit.total;
 
-    // ── Length-based cost per print ──────────────────────────────────
-    // Cost is based on roll length consumed, not print area.
-    // The roll width is fixed — a narrow print wastes width but still
-    // consumes the same row height, so it costs the same as a wider one.
-    const lengthPerPrint = printsAcross > 0 ? rollFit.printRowH / printsAcross : 0;
-    const costPerPrintExVat = Math.round(lengthPerPrint * costPerMm_exVat * 100) / 100;
-    const costPerPrintIncVat = Math.round(lengthPerPrint * costPerMm_incVat * 100) / 100;
-
     // Horizontal waste analysis — how much roll width is unused
     const effectivePw = rollFit.rotated ? printHeight : printWidth;
     const usedWidth = printsAcross > 0 ? printsAcross * (effectivePw + gap) - gap : 0;
@@ -654,6 +646,15 @@ export default function VinylCalculator() {
     const orderRows = Math.ceil(quantity / orderPrintsAcross);
     const orderLengthMm = orderRows * rollFit.printRowH + mat.wastePerCut;
     const orderMetres = orderLengthMm / 1000;
+
+    // ── Cost per print (based on actual vinyl consumed) ─────────────
+    // Includes cut waste and unfilled rows — divides the total vinyl
+    // cost for this order by the quantity, so it reflects what you
+    // actually pay, not a theoretical optimum.
+    const orderCostExVat = orderLengthMm * costPerMm_exVat;
+    const orderCostIncVat = orderLengthMm * costPerMm_incVat;
+    const costPerPrintExVat = quantity > 0 ? Math.round((orderCostExVat / quantity) * 100) / 100 : 0;
+    const costPerPrintIncVat = quantity > 0 ? Math.round((orderCostIncVat / quantity) * 100) / 100 : 0;
 
     // Order summary — find applicable discount based on metres used
     const sortedTiers = [...discountTiers].sort(
