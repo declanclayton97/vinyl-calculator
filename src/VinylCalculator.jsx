@@ -715,8 +715,8 @@ export default function VinylCalculator() {
     const setupPerPrintExVat = quantity > 0 ? setupCostExVat / quantity : 0;
     const setupPerPrintIncVat = quantity > 0 ? setupCostIncVat / quantity : 0;
     const pricingRows = multipliers.map((mul) => {
-      const unitPriceExVat = Math.round((rawCostPerPrintExVat * mul.value + setupPerPrintExVat) * 100) / 100;
-      const unitPriceIncVat = Math.round((rawCostPerPrintIncVat * mul.value + setupPerPrintIncVat) * 100) / 100;
+      const unitPriceExVat = Math.ceil((rawCostPerPrintExVat * mul.value + setupPerPrintExVat) * 100) / 100;
+      const unitPriceIncVat = Math.ceil((rawCostPerPrintIncVat * mul.value + setupPerPrintIncVat) * 100) / 100;
       const totalCostPerUnit = rawCostPerPrintExVat + setupPerPrintExVat;
       const marginPercent =
         unitPriceExVat > 0
