@@ -1,4 +1,220 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+
+// ─── Tutorial steps ─────────────────────────────────────────────────
+const TUTORIAL_STEPS = [
+  {
+    target: null,
+    title: "Welcome to the Vinyl Calculator",
+    body: "This tool helps you calculate cost per print, selling prices and profit margins for vinyl printing jobs. Let's walk through how it works.",
+  },
+  {
+    target: "vinyl-tabs",
+    title: "Vinyl Types",
+    body: "Choose the type of vinyl you're working with. Each type has its own roll size, cost and waste settings. UV Vinyl, White Sticker and Clear Sticker are available.",
+  },
+  {
+    target: "settings-btn",
+    title: "Settings",
+    body: "Click here to adjust material settings like roll length, width, cost and waste. You can also manage markup multipliers and VAT rate here.",
+  },
+  {
+    target: "print-job",
+    title: "Print Job",
+    body: "Enter the width and height of your print in millimeters, plus how many you need. The calculator will work out how many fit across the roll and flag any wasted space.",
+  },
+  {
+    target: "vinyl-preview",
+    title: "Layout Preview",
+    body: "This shows how your prints will be laid out on the roll. Blue rectangles are prints, red areas are cut waste. It will rotate prints automatically if that fits more across.",
+  },
+  {
+    target: "cost-breakdown",
+    title: "Cost Breakdown",
+    body: "See the material cost per print, how many fit per metre, how many fit across the roll width, and the total per full roll.",
+  },
+  {
+    target: "pricing-table",
+    title: "Pricing Table",
+    body: "Your markup multipliers are applied to the cost price to give you selling prices. The table shows ex-VAT, inc-VAT and margin for each markup level, plus bulk discount tiers.",
+  },
+  {
+    target: "order-summary",
+    title: "Order Summary",
+    body: "Based on your quantity, this shows total vinyl used, rolls needed, material cost, and revenue/profit at each markup level. Bulk discounts are applied automatically.",
+  },
+  {
+    target: "custom-length",
+    title: "Custom Length Estimator",
+    body: "Got a specific length of vinyl? Enter it here to see how many prints you can fit. Handy for using up offcuts.",
+  },
+  {
+    target: "bulk-discount",
+    title: "Bulk Discounts",
+    body: "Set up volume discount tiers based on metres of vinyl used. These automatically apply in the pricing and order summary sections.",
+  },
+];
+
+const TutorialOverlay = ({ step, totalSteps, currentStep, onNext, onPrev, onClose }) => {
+  const targetRef = useRef(null);
+  const tooltipRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, height: 0 });
+  const [tooltipStyle, setTooltipStyle] = useState({});
+
+  useEffect(() => {
+    if (!step.target) {
+      setPos({ top: 0, left: 0, width: 0, height: 0 });
+      return;
+    }
+    const el = document.getElementById(step.target);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const padding = 8;
+    setPos({
+      top: rect.top + window.scrollY - padding,
+      left: rect.left + window.scrollX - padding,
+      width: rect.width + padding * 2,
+      height: rect.height + padding * 2,
+    });
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [step.target]);
+
+  useEffect(() => {
+    if (!tooltipRef.current) return;
+    const tooltip = tooltipRef.current;
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    if (!step.target) {
+      setTooltipStyle({
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+      });
+      return;
+    }
+
+    const el = document.getElementById(step.target);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    let top, left;
+
+    // Try below
+    if (rect.bottom + tooltipRect.height + 16 < vh) {
+      top = rect.bottom + 12;
+      left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    }
+    // Try above
+    else if (rect.top - tooltipRect.height - 16 > 0) {
+      top = rect.top - tooltipRect.height - 12;
+      left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+    }
+    // Fallback: center
+    else {
+      top = vh / 2 - tooltipRect.height / 2;
+      left = vw / 2 - tooltipRect.width / 2;
+    }
+
+    // Clamp horizontal
+    left = Math.max(16, Math.min(left, vw - tooltipRect.width - 16));
+    top = Math.max(16, top);
+
+    setTooltipStyle({
+      position: "fixed",
+      top: `${top}px`,
+      left: `${left}px`,
+    });
+  }, [pos, step.target]);
+
+  const isWelcome = !step.target;
+
+  return (
+    <div className="fixed inset-0 z-[9999]">
+      {/* Dark overlay with cutout */}
+      <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: "none" }}>
+        <defs>
+          <mask id="tutorial-mask">
+            <rect x="0" y="0" width="100%" height="100%" fill="white" />
+            {!isWelcome && pos.width > 0 && (
+              <rect
+                x={pos.left}
+                y={pos.top}
+                width={pos.width}
+                height={pos.height}
+                rx="12"
+                fill="black"
+              />
+            )}
+          </mask>
+        </defs>
+        <rect
+          x="0" y="0" width="100%" height="100%"
+          fill="rgba(0,0,0,0.5)"
+          mask="url(#tutorial-mask)"
+        />
+      </svg>
+
+      {/* Highlight border */}
+      {!isWelcome && pos.width > 0 && (
+        <div
+          className="absolute rounded-xl border-2 border-blue-400 pointer-events-none"
+          style={{
+            top: pos.top,
+            left: pos.left,
+            width: pos.width,
+            height: pos.height,
+            boxShadow: "0 0 0 4px rgba(59,130,246,0.2)",
+          }}
+        />
+      )}
+
+      {/* Click blocker */}
+      <div className="absolute inset-0" onClick={onClose} />
+
+      {/* Tooltip */}
+      <div
+        ref={tooltipRef}
+        className="bg-white rounded-2xl shadow-2xl p-6 z-10 max-w-sm"
+        style={{ ...tooltipStyle, pointerEvents: "auto" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between mb-2">
+          <h3 className="text-lg font-bold text-gray-800">{step.title}</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none ml-4 -mt-1"
+          >
+            &times;
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 mb-5 leading-relaxed">{step.body}</p>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-400">
+            {currentStep + 1} / {totalSteps}
+          </span>
+          <div className="flex gap-2">
+            {currentStep > 0 && (
+              <button
+                onClick={onPrev}
+                className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Back
+              </button>
+            )}
+            <button
+              onClick={currentStep < totalSteps - 1 ? onNext : onClose}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              {currentStep < totalSteps - 1 ? "Next" : "Got it"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ─── Vinyl type defaults ─────────────────────────────────────────────
 const VINYL_DEFAULTS = {
@@ -279,6 +495,22 @@ export default function VinylCalculator() {
   // Custom length estimator
   const [customLength, setCustomLength] = useState(1000);
 
+  // Tutorial state
+  const [showTutorial, setShowTutorial] = useState(() => {
+    return !localStorage.getItem("vinyl-calc-tutorial-done");
+  });
+  const [tutorialStep, setTutorialStep] = useState(0);
+
+  const startTutorial = () => {
+    setTutorialStep(0);
+    setShowTutorial(true);
+  };
+
+  const closeTutorial = () => {
+    setShowTutorial(false);
+    localStorage.setItem("vinyl-calc-tutorial-done", "1");
+  };
+
   // Current material shortcut
   const mat = materials[activeType];
 
@@ -516,6 +748,18 @@ export default function VinylCalculator() {
   // ── Render ────────────────────────────────────────────────────────
   return (
     <div className="p-6 space-y-6">
+      {/* Tutorial overlay */}
+      {showTutorial && (
+        <TutorialOverlay
+          step={TUTORIAL_STEPS[tutorialStep]}
+          totalSteps={TUTORIAL_STEPS.length}
+          currentStep={tutorialStep}
+          onNext={() => setTutorialStep((s) => Math.min(s + 1, TUTORIAL_STEPS.length - 1))}
+          onPrev={() => setTutorialStep((s) => Math.max(s - 1, 0))}
+          onClose={closeTutorial}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -526,24 +770,36 @@ export default function VinylCalculator() {
             Calculate cost per print, selling prices and margins for vinyl jobs
           </p>
         </div>
-        <button
-          onClick={() => setShowSettings((v) => !v)}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            showSettings
-              ? "bg-gray-800 text-white shadow-md"
-              : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-          }`}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Settings
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={startTutorial}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Tutorial
+          </button>
+          <button
+            id="settings-btn"
+            onClick={() => setShowSettings((v) => !v)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              showSettings
+                ? "bg-gray-800 text-white shadow-md"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Settings
+          </button>
+        </div>
       </div>
 
       {/* Vinyl type tabs */}
-      <div className="flex gap-2">
+      <div id="vinyl-tabs" className="flex gap-2">
         {Object.entries(VINYL_DEFAULTS).map(([key, def]) => (
           <button
             key={key}
@@ -641,7 +897,7 @@ export default function VinylCalculator() {
       {/* Layout: fixed preview sidebar + two-column grid */}
       <div className="flex gap-6">
         {/* ── PREVIEW COLUMN (fixed width) ────────────────────── */}
-        <div className="hidden md:block flex-shrink-0" style={{ width: 350 }}>
+        <div id="vinyl-preview" className="hidden md:block flex-shrink-0" style={{ width: 350 }}>
           <VinylPreview
             mat={mat}
             printWidth={printWidth}
@@ -658,7 +914,7 @@ export default function VinylCalculator() {
         {/* ── LEFT COLUMN ────────────────────────────────────── */}
         <div className="space-y-5">
           {/* Print Job */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div id="print-job" className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
               Print Job
             </h2>
@@ -696,7 +952,7 @@ export default function VinylCalculator() {
           </div>
 
           {/* Custom Length Estimator */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div id="custom-length" className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
               Custom Length Estimator
             </h2>
@@ -726,7 +982,7 @@ export default function VinylCalculator() {
           </div>
 
           {/* Bulk Discount Tiers */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div id="bulk-discount" className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
               Bulk Discount (by vinyl used)
             </h2>
@@ -783,7 +1039,7 @@ export default function VinylCalculator() {
         {/* ── RIGHT COLUMN ─────────────────────────────────────── */}
         <div className="space-y-5">
           {/* Roll Summary */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div id="cost-breakdown" className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
               Cost Breakdown
             </h2>
@@ -812,7 +1068,7 @@ export default function VinylCalculator() {
           </div>
 
           {/* Pricing Table */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div id="pricing-table" className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
               Pricing Table
             </h2>
@@ -864,7 +1120,7 @@ export default function VinylCalculator() {
           </div>
 
           {/* Order Summary */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div id="order-summary" className="bg-white rounded-2xl border border-gray-200 p-5">
             <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
               Order Summary — {quantity} pcs
             </h2>
