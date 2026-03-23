@@ -648,19 +648,21 @@ export default function VinylCalculator() {
     const orderMetres = orderLengthMm / 1000;
 
     // ── Cost per print (actual vinyl consumed / quantity) ──────────
-    // Includes cut waste, unfilled rows — the real cost per sticker.
+    // Computed from raw (unrounded) values to avoid precision loss.
     // More stickers = cheaper each, because fixed costs are shared.
-    const materialCostExVat = Math.round(orderLengthMm * costPerMm_exVat * 100) / 100;
-    const materialCostIncVat = Math.round(orderLengthMm * costPerMm_incVat * 100) / 100;
-    const costPerPrintExVat = quantity > 0 ? Math.round((materialCostExVat / quantity) * 100) / 100 : 0;
-    const costPerPrintIncVat = quantity > 0 ? Math.round((materialCostIncVat / quantity) * 100) / 100 : 0;
+    const rawMaterialExVat = orderLengthMm * costPerMm_exVat;
+    const rawMaterialIncVat = orderLengthMm * costPerMm_incVat;
+    const materialCostExVat = Math.round(rawMaterialExVat * 100) / 100;
+    const materialCostIncVat = Math.round(rawMaterialIncVat * 100) / 100;
+    const costPerPrintExVat = quantity > 0 ? Math.round((rawMaterialExVat / quantity) * 100) / 100 : 0;
+    const costPerPrintIncVat = quantity > 0 ? Math.round((rawMaterialIncVat / quantity) * 100) / 100 : 0;
 
     // Waste breakdown for transparency
     const vinylPerPrintMm = printsAcross > 0 ? rollFit.printRowH / printsAcross : 0;
-    const printVinylExVat = Math.round(vinylPerPrintMm * costPerMm_exVat * quantity * 100) / 100;
-    const wasteCostExVat = Math.round((materialCostExVat - printVinylExVat) * 100) / 100;
-    const printVinylIncVat = Math.round(vinylPerPrintMm * costPerMm_incVat * quantity * 100) / 100;
-    const wasteCostIncVat = Math.round((materialCostIncVat - printVinylIncVat) * 100) / 100;
+    const rawPrintVinylExVat = vinylPerPrintMm * costPerMm_exVat * quantity;
+    const rawPrintVinylIncVat = vinylPerPrintMm * costPerMm_incVat * quantity;
+    const wasteCostExVat = Math.max(0, Math.round((rawMaterialExVat - rawPrintVinylExVat) * 100) / 100);
+    const wasteCostIncVat = Math.max(0, Math.round((rawMaterialIncVat - rawPrintVinylIncVat) * 100) / 100);
 
     // Order summary
     const rollsNeeded = totalPerRoll > 0 ? Math.ceil(quantity / totalPerRoll) : 0;
