@@ -318,8 +318,8 @@ export default function VinylCalculator() {
     const costPerMmSq_incVat = usableAreaPerM > 0
       ? (costPerM_incVat / usableAreaPerM) * wastageMultiplier : 0;
 
-    const costPerPrintExVat = printAreaMm2 * costPerMmSq_exVat;
-    const costPerPrintIncVat = printAreaMm2 * costPerMmSq_incVat;
+    const costPerPrintExVat = Math.round(printAreaMm2 * costPerMmSq_exVat * 100) / 100;
+    const costPerPrintIncVat = Math.round(printAreaMm2 * costPerMmSq_incVat * 100) / 100;
 
     // ── Discrete layout helper ────────────────────────────────────────
     // Fits prints into a given width × length, trying both orientations.
