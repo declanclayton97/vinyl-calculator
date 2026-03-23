@@ -693,8 +693,10 @@ export default function VinylCalculator() {
     const rawProductionCostIncVat = rawProductionCostExVat * (1 + vatRate / 100);
     const productionCostExVat = Math.round(rawProductionCostExVat * 100) / 100;
     const productionCostIncVat = Math.round(rawProductionCostIncVat * 100) / 100;
-    const costPerPrintAllInExVat = quantity > 0 ? Math.round((rawProductionCostExVat / quantity) * 100) / 100 : 0;
-    const costPerPrintAllInIncVat = quantity > 0 ? Math.round((rawProductionCostIncVat / quantity) * 100) / 100 : 0;
+    const rawCostPerPrintExVat = quantity > 0 ? rawProductionCostExVat / quantity : 0;
+    const rawCostPerPrintIncVat = quantity > 0 ? rawProductionCostIncVat / quantity : 0;
+    const costPerPrintAllInExVat = Math.round(rawCostPerPrintExVat * 100) / 100;
+    const costPerPrintAllInIncVat = Math.round(rawCostPerPrintIncVat * 100) / 100;
 
     // Total job cost (production + setup)
     const setupCostIncVat = Math.round(setupCostExVat * (1 + vatRate / 100) * 100) / 100;
@@ -709,13 +711,13 @@ export default function VinylCalculator() {
     const applicableTier = sortedTiers.find((t) => orderMetres >= t.minMetres);
     const appliedDiscount = applicableTier ? applicableTier.discount : 0;
 
-    // Pricing rows — based on production cost per print (setup added separately)
+    // Pricing rows — markup applied to raw (unrounded) cost per print
     const pricingRows = multipliers.map((mul) => {
-      const unitPriceExVat = costPerPrintAllInExVat * mul.value;
-      const unitPriceIncVat = costPerPrintAllInIncVat * mul.value;
+      const unitPriceExVat = Math.round(rawCostPerPrintExVat * mul.value * 100) / 100;
+      const unitPriceIncVat = Math.round(rawCostPerPrintIncVat * mul.value * 100) / 100;
       const marginPercent =
         unitPriceExVat > 0
-          ? ((unitPriceExVat - costPerPrintAllInExVat) / unitPriceExVat) * 100
+          ? ((unitPriceExVat - rawCostPerPrintExVat) / unitPriceExVat) * 100
           : 0;
 
       const bulkPrices = discountTiers.map((tier) => ({
