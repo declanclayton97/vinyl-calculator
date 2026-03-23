@@ -711,20 +711,23 @@ export default function VinylCalculator() {
     const applicableTier = sortedTiers.find((t) => orderMetres >= t.minMetres);
     const appliedDiscount = applicableTier ? applicableTier.discount : 0;
 
-    // Pricing rows — markup applied to raw (unrounded) cost per print
+    // Pricing rows — markup on production cost + setup amortized (not marked up)
+    const setupPerPrintExVat = quantity > 0 ? setupCostExVat / quantity : 0;
+    const setupPerPrintIncVat = quantity > 0 ? setupCostIncVat / quantity : 0;
     const pricingRows = multipliers.map((mul) => {
-      const unitPriceExVat = Math.round(rawCostPerPrintExVat * mul.value * 100) / 100;
-      const unitPriceIncVat = Math.round(rawCostPerPrintIncVat * mul.value * 100) / 100;
+      const unitPriceExVat = Math.round((rawCostPerPrintExVat * mul.value + setupPerPrintExVat) * 100) / 100;
+      const unitPriceIncVat = Math.round((rawCostPerPrintIncVat * mul.value + setupPerPrintIncVat) * 100) / 100;
+      const totalCostPerUnit = rawCostPerPrintExVat + setupPerPrintExVat;
       const marginPercent =
         unitPriceExVat > 0
-          ? ((unitPriceExVat - rawCostPerPrintExVat) / unitPriceExVat) * 100
+          ? ((unitPriceExVat - totalCostPerUnit) / unitPriceExVat) * 100
           : 0;
 
       const bulkPrices = discountTiers.map((tier) => ({
         minMetres: tier.minMetres,
         discount: tier.discount,
-        priceExVat: unitPriceExVat * (1 - tier.discount / 100),
-        priceIncVat: unitPriceIncVat * (1 - tier.discount / 100),
+        priceExVat: Math.round(unitPriceExVat * (1 - tier.discount / 100) * 100) / 100,
+        priceIncVat: Math.round(unitPriceIncVat * (1 - tier.discount / 100) * 100) / 100,
       }));
 
       return { multiplier: mul.value, label: mul.label, unitPriceExVat, unitPriceIncVat, marginPercent, bulkPrices };
@@ -1177,9 +1180,12 @@ export default function VinylCalculator() {
 
           {/* Pricing Table */}
           <div id="pricing-table" className="bg-white rounded-2xl border border-gray-200 p-5">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-gray-700 mb-1 uppercase tracking-wide">
               Pricing Table
             </h2>
+            <p className="text-xs text-gray-400 mb-3">
+              All-in per sticker price incl. setup — production cost: {fmt(calc.costPerPrintAllInExVat)}, setup: {fmt(setupCost / quantity)}/ea ex-VAT
+            </p>
             {calc.costPerPrintExVat === 0 ? (
               <p className="text-sm text-gray-400 italic">
                 Enter valid print dimensions to see pricing.
@@ -1307,7 +1313,7 @@ export default function VinylCalculator() {
                       {calc.pricingRows.map((row) => {
                         const discountMul = 1 - calc.appliedDiscount / 100;
                         const unitSell = row.unitPriceExVat * discountMul;
-                        const revenue = unitSell * quantity + calc.setupCostExVat;
+                        const revenue = unitSell * quantity;
                         const profit = revenue - calc.totalCostExVat;
                         const margin =
                           revenue > 0 ? (profit / revenue) * 100 : 0;
