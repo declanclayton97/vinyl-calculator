@@ -60,7 +60,7 @@ const TutorialOverlay = ({ step, totalSteps, currentStep, onNext, onPrev, onClos
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const [tooltipStyle, setTooltipStyle] = useState({});
 
-  useEffect(() => {
+  const updatePos = useCallback(() => {
     if (!step.target) {
       setPos({ top: 0, left: 0, width: 0, height: 0 });
       return;
@@ -70,13 +70,36 @@ const TutorialOverlay = ({ step, totalSteps, currentStep, onNext, onPrev, onClos
     const rect = el.getBoundingClientRect();
     const padding = 8;
     setPos({
-      top: rect.top + window.scrollY - padding,
-      left: rect.left + window.scrollX - padding,
+      top: rect.top - padding,
+      left: rect.left - padding,
       width: rect.width + padding * 2,
       height: rect.height + padding * 2,
     });
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [step.target]);
+
+  useEffect(() => {
+    if (!step.target) {
+      setPos({ top: 0, left: 0, width: 0, height: 0 });
+      return;
+    }
+    const el = document.getElementById(step.target);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Update position after scroll settles
+    const timer = setTimeout(updatePos, 400);
+    return () => clearTimeout(timer);
+  }, [step.target, updatePos]);
+
+  // Recalculate on scroll/resize so spotlight stays aligned
+  useEffect(() => {
+    if (!step.target) return;
+    window.addEventListener("scroll", updatePos, true);
+    window.addEventListener("resize", updatePos);
+    return () => {
+      window.removeEventListener("scroll", updatePos, true);
+      window.removeEventListener("resize", updatePos);
+    };
+  }, [step.target, updatePos]);
 
   useEffect(() => {
     if (!tooltipRef.current) return;
