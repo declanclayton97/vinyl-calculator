@@ -582,23 +582,9 @@ export default function VinylCalculator() {
     const effectiveHeight = printHeight + mat.gap;
     const printAreaMm2 = effectiveWidth * effectiveHeight;
 
-    // ── Area-based cost formula ─────────────────────────────────────
-    // Per metre of roll: some length is usable, some is lost to cuts
-    const usableLengthPerM = 1000 - mat.wastePerCut; // mm usable per 1000mm
-    const usableAreaPerM = mat.rollWidth * usableLengthPerM; // mm² usable per metre
-    const wastageMultiplier = usableLengthPerM > 0 ? 1000 / usableLengthPerM : 0;
-
-    // Cost per mm² of usable area, then apply wastage multiplier
-    const costPerM_exVat = mat.rollLength > 0 ? mat.costExVat / mat.rollLength : 0;
-    const costPerM_incVat = mat.rollLength > 0 ? rollCostIncVat / mat.rollLength : 0;
-
-    const costPerMmSq_exVat = usableAreaPerM > 0
-      ? (costPerM_exVat / usableAreaPerM) * wastageMultiplier : 0;
-    const costPerMmSq_incVat = usableAreaPerM > 0
-      ? (costPerM_incVat / usableAreaPerM) * wastageMultiplier : 0;
-
-    const costPerPrintExVat = Math.round(printAreaMm2 * costPerMmSq_exVat * 100) / 100;
-    const costPerPrintIncVat = Math.round(printAreaMm2 * costPerMmSq_incVat * 100) / 100;
+    // Cost per mm of roll length (roll width is fixed, so cost is per linear mm)
+    const costPerMm_exVat = rollLengthMm > 0 ? mat.costExVat / rollLengthMm : 0;
+    const costPerMm_incVat = rollLengthMm > 0 ? rollCostIncVat / rollLengthMm : 0;
 
     // ── Discrete layout helper ────────────────────────────────────────
     // Fits prints into a given width × length, trying both orientations.
@@ -632,6 +618,14 @@ export default function VinylCalculator() {
     const printsAcross = rollFit.across;
     const rowsPerRoll = rollFit.rows;
     const totalPerRoll = rollFit.total;
+
+    // ── Length-based cost per print ──────────────────────────────────
+    // Cost is based on roll length consumed, not print area.
+    // The roll width is fixed — a narrow print wastes width but still
+    // consumes the same row height, so it costs the same as a wider one.
+    const lengthPerPrint = printsAcross > 0 ? rollFit.printRowH / printsAcross : 0;
+    const costPerPrintExVat = Math.round(lengthPerPrint * costPerMm_exVat * 100) / 100;
+    const costPerPrintIncVat = Math.round(lengthPerPrint * costPerMm_incVat * 100) / 100;
 
     // Horizontal waste analysis — how much roll width is unused
     const effectivePw = rollFit.rotated ? printHeight : printWidth;
