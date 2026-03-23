@@ -680,10 +680,14 @@ export default function VinylCalculator() {
       return { multiplier: mul.value, label: mul.label, unitPriceExVat, unitPriceIncVat, marginPercent, bulkPrices };
     });
 
-    // Material cost = actual vinyl consumed (including cut waste + unfilled rows)
+    // Material cost breakdown
     const rollsNeeded = totalPerRoll > 0 ? Math.ceil(quantity / totalPerRoll) : 0;
+    const printMaterialExVat = Math.round(costPerPrintExVat * quantity * 100) / 100;
+    const printMaterialIncVat = Math.round(costPerPrintIncVat * quantity * 100) / 100;
     const materialCostExVat = Math.round(orderLengthMm * costPerMm_exVat * 100) / 100;
     const materialCostIncVat = Math.round(orderLengthMm * costPerMm_incVat * 100) / 100;
+    const wasteCostExVat = Math.round((materialCostExVat - printMaterialExVat) * 100) / 100;
+    const wasteCostIncVat = Math.round((materialCostIncVat - printMaterialIncVat) * 100) / 100;
 
     // Custom length fitting — try both orientations, exact and +1 row each,
     // then pick the option whose actual length is closest to the target
@@ -736,8 +740,12 @@ export default function VinylCalculator() {
       pricingRows,
       appliedDiscount,
       rollsNeeded,
+      printMaterialExVat,
+      printMaterialIncVat,
       materialCostExVat,
       materialCostIncVat,
+      wasteCostExVat,
+      wasteCostIncVat,
       customFit,
       customActualLength,
       rollFitRotated: rollFit.rotated,
@@ -1170,20 +1178,31 @@ export default function VinylCalculator() {
               </p>
             ) : (
               <>
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-2 gap-3 mb-4">
                   <StatCard
                     label="Vinyl used"
-                    value={`${calc.orderMetres.toFixed(1)}m`}
+                    value={`${calc.orderMetres.toFixed(2)}m`}
+                    sub={`${calc.rollsNeeded} roll${calc.rollsNeeded !== 1 ? "s" : ""} needed`}
                   />
                   <StatCard
-                    label="Rolls needed"
-                    value={calc.rollsNeeded}
-                  />
-                  <StatCard
-                    label="Material cost"
+                    label="Total material cost"
                     value={fmt(calc.materialCostIncVat)}
                     sub={`${fmt(calc.materialCostExVat)} ex-VAT`}
                   />
+                </div>
+                <div className="bg-gray-50 rounded-xl px-4 py-3 mb-4 text-sm space-y-1">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Print material ({quantity} x {fmt(calc.costPerPrintIncVat)})</span>
+                    <span>{fmt(calc.printMaterialIncVat)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Waste (cut + unfilled row)</span>
+                    <span>{fmt(calc.wasteCostIncVat)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-gray-800 border-t border-gray-200 pt-1 mt-1">
+                    <span>Total</span>
+                    <span>{fmt(calc.materialCostIncVat)}</span>
+                  </div>
                 </div>
 
                 {calc.appliedDiscount > 0 && (
