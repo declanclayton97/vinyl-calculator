@@ -156,7 +156,7 @@ const VinylPreview = ({ mat, printWidth, printHeight, across, rotated, quantity 
       <div className="flex justify-center">
         <svg
           viewBox={`0 0 ${physW} ${displayH}`}
-          className="w-full max-h-[400px] border border-gray-100 rounded-lg"
+          className="w-full border border-gray-100 rounded-lg"
           preserveAspectRatio="xMidYMin meet"
         >
           <defs>
