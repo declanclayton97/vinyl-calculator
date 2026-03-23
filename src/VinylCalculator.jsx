@@ -156,7 +156,7 @@ const VinylPreview = ({ mat, printWidth, printHeight, across, rotated, quantity 
       <div className="flex justify-center">
         <svg
           viewBox={`0 0 ${physW} ${displayH}`}
-          className="w-full max-h-[280px] border border-gray-100 rounded-lg"
+          className="w-full max-h-[400px] border border-gray-100 rounded-lg"
           preserveAspectRatio="xMidYMin meet"
         >
           <defs>
@@ -641,7 +641,7 @@ export default function VinylCalculator() {
       {/* Layout: fixed preview sidebar + two-column grid */}
       <div className="flex gap-6">
         {/* ── PREVIEW COLUMN (fixed width) ────────────────────── */}
-        <div className="hidden md:block flex-shrink-0" style={{ width: 250 }}>
+        <div className="hidden md:block flex-shrink-0" style={{ width: 350 }}>
           <VinylPreview
             mat={mat}
             printWidth={printWidth}
