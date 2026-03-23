@@ -500,8 +500,15 @@ export default function VinylCalculator() {
     return !localStorage.getItem("vinyl-calc-tutorial-done");
   });
   const [tutorialStep, setTutorialStep] = useState(0);
+  const prefsBeforeTutorial = useRef(null);
 
   const startTutorial = () => {
+    // Save current values so we can restore after
+    prefsBeforeTutorial.current = { printWidth, printHeight, quantity };
+    // Set example values so the user can see real numbers
+    setPrintWidth(90);
+    setPrintHeight(150);
+    setQuantity(6);
     setTutorialStep(0);
     setShowTutorial(true);
   };
@@ -509,7 +516,24 @@ export default function VinylCalculator() {
   const closeTutorial = () => {
     setShowTutorial(false);
     localStorage.setItem("vinyl-calc-tutorial-done", "1");
+    // Restore previous values
+    if (prefsBeforeTutorial.current) {
+      setPrintWidth(prefsBeforeTutorial.current.printWidth);
+      setPrintHeight(prefsBeforeTutorial.current.printHeight);
+      setQuantity(prefsBeforeTutorial.current.quantity);
+      prefsBeforeTutorial.current = null;
+    }
   };
+
+  // Set example values on first-ever load (tutorial auto-shows)
+  useEffect(() => {
+    if (showTutorial && !prefsBeforeTutorial.current) {
+      prefsBeforeTutorial.current = { printWidth: 0, printHeight: 0, quantity: 1 };
+      setPrintWidth(90);
+      setPrintHeight(150);
+      setQuantity(6);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Current material shortcut
   const mat = materials[activeType];
