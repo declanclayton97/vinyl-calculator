@@ -1,0 +1,1471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Size Cross Comparison Tool - TuffShop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f7f7f7; --surface: #ffffff; --surface-2: #f0f0f0;
+            --border: #d1d1d1; --text: #333; --text-muted: #666;
+            --accent: #f3d014; --accent-hover: #ffe51e;
+            --accent-glow: rgba(243,208,20,0.15); --accent-text: #000;
+            --header-bg: #000; --header-text: #fff;
+            --topbar-bg: #202020; --topbar-text: #d9d9d9;
+            --success: #a4c316; --warning: #ff5400; --danger: #e02b27;
+            --radius: 8px; --radius-sm: 4px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Open Sans',Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; line-height:1.6; }
+
+        /* HEADER */
+        header { background:var(--header-bg); border-bottom:3px solid var(--accent); }
+        .header-inner { max-width:1200px; margin:0 auto; padding:14px 20px 10px; display:flex; align-items:center; justify-content:space-between; }
+        header h1 { font-size:1.5rem; font-weight:800; color:var(--accent); letter-spacing:-1px; }
+        header p { color:var(--topbar-text); font-size:0.85rem; }
+
+        /* TABS */
+        .tabs { display:flex; gap:0; background:var(--topbar-bg); margin-bottom:0; }
+        .tab { flex:1; padding:11px 16px; border:none; background:var(--topbar-bg); color:var(--topbar-text); font-family:inherit; font-size:0.9rem; font-weight:600; cursor:pointer; transition:all 0.2s; border-right:1px solid #353535; }
+        .tab:last-child { border-right:none; }
+        .tab:hover { color:#fff; background:#333; }
+        .tab.active { background:var(--accent); color:var(--accent-text); }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
+
+        /* LAYOUT */
+        .container { max-width:1200px; margin:0 auto; padding:16px; }
+        .page-layout { display:grid; grid-template-columns:1fr; gap:16px; }
+        @media(min-width:1024px) {
+            .page-layout { grid-template-columns:1fr 360px; }
+            .page-layout .main-col { grid-column:1; }
+            .page-layout .side-col { grid-column:2; grid-row:1/4; position:sticky; top:16px; max-height:calc(100vh - 32px); overflow-y:auto; }
+        }
+
+        /* PANELS */
+        .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+        .panel h3 { font-size:0.9rem; font-weight:700; color:var(--header-bg); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+        .panel h3::before { content:''; display:inline-block; width:4px; height:16px; background:var(--accent); border-radius:2px; }
+
+        /* INPUT MODE TOGGLE */
+        .mode-toggle { display:flex; gap:0; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; margin-bottom:14px; }
+        .mode-btn { flex:1; padding:9px 12px; border:none; background:#fff; color:var(--text-muted); font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+        .mode-btn.active { background:var(--header-bg); color:var(--accent); }
+        .mode-section { display:none; }
+        .mode-section.active { display:block; }
+
+        /* FORM */
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+        .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px; }
+        .form-group { display:flex; flex-direction:column; gap:5px; }
+        .form-group label { font-size:0.75rem; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:0.5px; }
+        select, input[type="number"], input[type="text"] { padding:9px 12px; background:#fff; border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-family:inherit; font-size:0.9rem; cursor:pointer; transition:border-color 0.2s; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:30px; }
+        input[type="number"], input[type="text"] { background-image:none; padding-right:12px; }
+        select:focus, input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+
+        /* FIT SELECTOR */
+        .fit-selector { display:flex; gap:0; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
+        .fit-btn { flex:1; padding:8px 6px; background:#fff; border:none; border-right:1px solid var(--border); color:var(--text-muted); font-family:inherit; font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.2s; text-align:center; }
+        .fit-btn:last-child { border-right:none; }
+        .fit-btn:hover { background:var(--surface-2); }
+        .fit-btn.active { color:#fff; }
+        .fit-btn[data-fit="slim"].active { background:#6366f1; }
+        .fit-btn[data-fit="fitted"].active { background:#3b82f6; }
+        .fit-btn[data-fit="regular"].active { background:var(--accent); color:var(--accent-text); }
+        .fit-btn[data-fit="relaxed"].active { background:#f59e0b; }
+        .fit-btn[data-fit="loose"].active { background:#ef4444; }
+        .fit-desc { font-size:0.75rem; color:var(--text-muted); margin-top:4px; }
+
+        /* UNIT TOGGLE */
+        .unit-toggle { display:flex; border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
+        .unit-btn { padding:9px 16px; background:#fff; border:none; color:var(--text-muted); font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer; }
+        .unit-btn.active { background:var(--header-bg); color:var(--accent); }
+
+        /* BUTTON */
+        .btn { display:block; width:100%; padding:11px 20px; background:var(--accent); color:var(--accent-text); border:none; border-radius:var(--radius-sm); font-family:inherit; font-size:0.9rem; font-weight:700; cursor:pointer; transition:all 0.2s; text-transform:uppercase; letter-spacing:0.5px; }
+        .btn:hover { background:var(--accent-hover); box-shadow:0 4px 12px rgba(243,208,20,0.3); }
+
+        /* RESULTS */
+        .results-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px; }
+        .results-bar h2 { font-size:1rem; font-weight:700; }
+        .badge { background:var(--header-bg); color:var(--accent); border-radius:20px; padding:4px 12px; font-size:0.8rem; font-weight:600; }
+        .filter-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+        .filter-btn { padding:5px 12px; background:#fff; border:1px solid var(--border); border-radius:20px; color:var(--text-muted); font-family:inherit; font-size:0.8rem; cursor:pointer; transition:all 0.2s; }
+        .filter-btn.active { background:var(--header-bg); border-color:var(--header-bg); color:var(--accent); font-weight:600; }
+        .results-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:8px; }
+        .cat-header { grid-column:1/-1; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--header-bg); padding:10px 0 3px; border-bottom:2px solid var(--accent); margin-top:6px; }
+        .cat-header:first-child { margin-top:0; }
+
+        .result-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; display:flex; justify-content:space-between; align-items:center; transition:all 0.15s; }
+        .result-card:hover { border-color:var(--accent); box-shadow:0 2px 8px rgba(243,208,20,0.12); }
+        .result-card.source { border-color:var(--accent); border-left:4px solid var(--accent); background:rgba(243,208,20,0.06); }
+        .rc-brand { display:flex; flex-direction:column; min-width:0; }
+        .rc-name { font-weight:700; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .rc-sub { font-size:0.75rem; color:var(--text-muted); }
+        .rc-size { display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; }
+        .rc-size-val { font-size:1.4rem; font-weight:800; color:var(--header-bg); }
+        .rc-size-val.between { font-size:1.1rem; color:var(--warning); }
+        .rc-conf { font-size:0.7rem; padding:2px 7px; border-radius:10px; margin-top:2px; }
+        .conf-exact { background:rgba(164,195,22,0.15); color:#7a9600; }
+        .conf-close { background:rgba(243,208,20,0.15); color:#b89d00; }
+        .conf-between { background:rgba(224,43,39,0.12); color:var(--danger); }
+
+        /* COMPARE PANEL (side) */
+        .compare-panel h3::before { background:var(--accent); }
+        .compare-vs { font-size:1rem; font-weight:800; color:var(--accent); background:var(--header-bg); width:34px; height:34px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:8px auto; flex-shrink:0; }
+        .compare-canvas { position:relative; display:flex; justify-content:center; align-items:center; min-height:200px; background:#fafafa; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+        .compare-canvas svg { width:100%; max-width:320px; height:auto; }
+        .compare-empty { text-align:center; padding:30px 16px; color:var(--text-muted); font-size:0.85rem; }
+        .compare-legend { display:flex; justify-content:center; gap:16px; margin-top:8px; font-size:0.8rem; font-weight:600; }
+        .compare-legend-item { display:flex; align-items:center; gap:5px; }
+        .compare-swatch { width:16px; height:10px; border-radius:2px; border:1px solid rgba(0,0,0,0.1); }
+        .compare-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:10px; }
+        .cstat { text-align:center; padding:8px 4px; background:var(--surface-2); border-radius:var(--radius-sm); }
+        .cstat-val { font-size:1rem; font-weight:800; color:var(--header-bg); }
+        .cstat-lbl { font-size:0.65rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+
+        /* SNICKERS HELPER */
+        .snickers-help { background:var(--surface-2); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:10px; font-size:0.8rem; line-height:1.5; }
+        .snickers-help strong { color:var(--header-bg); }
+        .snickers-help .code-badge { display:inline-block; background:var(--header-bg); color:var(--accent); padding:1px 8px; border-radius:3px; font-weight:700; font-size:0.85rem; margin:0 2px; }
+
+        /* FOOTWEAR TABLE */
+        .fw-table { width:100%; border-collapse:separate; border-spacing:0; }
+        .fw-table th, .fw-table td { padding:8px 12px; text-align:center; border-bottom:1px solid var(--border); font-size:0.85rem; }
+        .fw-table th { background:var(--header-bg); color:var(--accent); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+        .fw-table th:first-child { border-radius:var(--radius-sm) 0 0 0; }
+        .fw-table th:last-child { border-radius:0 var(--radius-sm) 0 0; }
+        .fw-table tr:hover td { background:var(--surface-2); }
+        .fw-table tr.highlight td { background:rgba(243,208,20,0.15); color:var(--header-bg); font-weight:700; }
+
+        /* NOTES */
+        .notes { font-size:0.8rem; color:var(--text-muted); margin-top:12px; }
+        .notes summary { font-weight:700; color:var(--header-bg); cursor:pointer; list-style:none; display:flex; align-items:center; gap:6px; }
+        .notes summary::before { content:'+'; font-weight:700; width:18px; height:18px; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--accent); color:var(--accent-text); font-size:0.9rem; flex-shrink:0; }
+        .notes[open] summary::before { content:'-'; }
+        .notes ul { margin:10px 0 0 26px; display:flex; flex-direction:column; gap:4px; }
+        .notes li { line-height:1.4; }
+
+        /* EMPTY STATE */
+        .empty { text-align:center; padding:40px 16px; color:var(--text-muted); }
+        .empty h4 { color:var(--text); font-size:1rem; margin-bottom:4px; }
+
+        /* FIT BADGE */
+        .fit-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:600; margin-left:6px; }
+        .fit-badge.slim { background:rgba(99,102,241,0.2); color:#818cf8; }
+        .fit-badge.fitted { background:rgba(59,130,246,0.2); color:#60a5fa; }
+        .fit-badge.regular { background:var(--accent-glow); color:var(--accent); }
+        .fit-badge.relaxed { background:rgba(245,158,11,0.2); color:#fbbf24; }
+        .fit-badge.loose { background:rgba(239,68,68,0.2); color:#f87171; }
+
+        /* RESPONSIVE */
+        @media(max-width:768px) {
+            .form-row, .form-row-3 { grid-template-columns:1fr; }
+            .results-grid { grid-template-columns:1fr; }
+            .header-inner { flex-direction:column; text-align:center; gap:4px; }
+            .tabs { flex-direction:column; }
+            .compare-stats { grid-template-columns:1fr; }
+            .fit-selector { flex-wrap:wrap; }
+            .fit-btn { flex:0 0 auto; min-width:55px; padding:7px 8px; font-size:0.75rem; }
+        }
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:var(--bg); }
+        ::-webkit-scrollbar-thumb { background:#ccc; border-radius:3px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <h1>Size Cross Comparison Tool</h1>
+            <p>Find your size across 27+ workwear & fashion brands</p>
+        </div>
+    </header>
+    <div class="tabs">
+        <button class="tab active" data-tab="tops" onclick="switchTab('tops')">Tops & Jackets</button>
+        <button class="tab" data-tab="trousers" onclick="switchTab('trousers')">Trousers</button>
+        <button class="tab" data-tab="footwear" onclick="switchTab('footwear')">Footwear</button>
+    </div>
+
+    <div class="container">
+    <!-- ==================== TOPS TAB ==================== -->
+    <div id="tab-tops" class="tab-content active">
+        <div class="page-layout">
+            <div class="main-col">
+                <div class="panel">
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" onclick="setMode('tops','brand',this)">I know my brand & size</button>
+                        <button class="mode-btn" onclick="setMode('tops','measure',this)">I know my measurements</button>
+                    </div>
+                    <div id="tops-mode-brand" class="mode-section active">
+                        <div class="form-row">
+                            <div class="form-group"><label>Brand</label><select id="tops-brand" onchange="updateTopsSizes()"><option value="">Select brand...</option></select></div>
+                            <div class="form-group"><label>My Size</label><select id="tops-size" onchange="runTopsCompare()"><option value="">Select size...</option></select></div>
+                        </div>
+                        <div class="form-row" style="margin-top:4px">
+                            <div class="form-group"><label>The fit of this item is</label>
+                                <div class="fit-selector" id="tops-curfit-sel">
+                                    <button class="fit-btn" data-fit="slim" onclick="setCurFit('tops','slim')">Tight</button>
+                                    <button class="fit-btn" data-fit="fitted" onclick="setCurFit('tops','fitted')">Fitted</button>
+                                    <button class="fit-btn active" data-fit="regular" onclick="setCurFit('tops','regular')">Regular</button>
+                                    <button class="fit-btn" data-fit="relaxed" onclick="setCurFit('tops','relaxed')">Relaxed</button>
+                                    <button class="fit-btn" data-fit="loose" onclick="setCurFit('tops','loose')">Loose</button>
+                                </div>
+                            </div>
+                            <div class="form-group"><label>What fit would you like?</label>
+                                <div class="fit-selector" id="tops-fit-sel">
+                                    <button class="fit-btn" data-fit="slim" onclick="setFit('tops','slim')">Slim</button>
+                                    <button class="fit-btn" data-fit="fitted" onclick="setFit('tops','fitted')">Fitted</button>
+                                    <button class="fit-btn active" data-fit="regular" onclick="setFit('tops','regular')">Regular</button>
+                                    <button class="fit-btn" data-fit="relaxed" onclick="setFit('tops','relaxed')">Relaxed</button>
+                                    <button class="fit-btn" data-fit="loose" onclick="setFit('tops','loose')">Loose</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="tops-mode-measure" class="mode-section">
+                        <div class="form-row-3">
+                            <div class="form-group"><label>Chest</label><input type="number" id="tops-chest" placeholder="e.g. 40" min="28" max="65" step="0.5"></div>
+                            <div class="form-group"><label>Unit</label><div class="unit-toggle"><button class="unit-btn active tops-unit" data-unit="in" onclick="setTopsUnit('in')">Inches</button><button class="unit-btn tops-unit" data-unit="cm" onclick="setTopsUnit('cm')">CM</button></div></div>
+                            <div class="form-group"><label>Preferred Fit</label>
+                                <div class="fit-selector" id="tops-fit-sel2">
+                                    <button class="fit-btn" data-fit="slim" onclick="setFit('tops','slim')">Slim</button>
+                                    <button class="fit-btn" data-fit="fitted" onclick="setFit('tops','fitted')">Fitted</button>
+                                    <button class="fit-btn active" data-fit="regular" onclick="setFit('tops','regular')">Regular</button>
+                                    <button class="fit-btn" data-fit="relaxed" onclick="setFit('tops','relaxed')">Relaxed</button>
+                                    <button class="fit-btn" data-fit="loose" onclick="setFit('tops','loose')">Loose</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn" onclick="runTopsMeasure()">Find My Sizes</button>
+                    </div>
+                </div>
+                <div id="tops-results">
+                    <div class="empty"><h4>Select a brand and size, or enter your chest measurement</h4><p>We'll show you the equivalent size across all brands</p></div>
+                </div>
+            </div>
+            <div class="side-col">
+                <div class="panel compare-panel">
+                    <h3>Visual Compare</h3>
+                    <div class="form-group"><label>Brand A</label><select id="vc-tops-a" onchange="updateVCSizes('tops','a')"><option value="">Select...</option></select></div>
+                    <div class="form-group" style="margin-top:6px"><label>Size</label><select id="vc-tops-sa" onchange="drawVC('tops')"><option value="">-</option></select></div>
+                    <div class="compare-vs">VS</div>
+                    <div class="form-group"><label>Brand B</label><select id="vc-tops-b" onchange="updateVCSizes('tops','b')"><option value="">Select...</option></select></div>
+                    <div class="form-group" style="margin-top:6px"><label>Size</label><select id="vc-tops-sb" onchange="drawVC('tops')"><option value="">-</option></select></div>
+                    <div class="compare-canvas" id="vc-tops-canvas"><div class="compare-empty">Select two brands & sizes to compare visually</div></div>
+                    <div class="compare-legend" id="vc-tops-legend" style="display:none">
+                        <div class="compare-legend-item"><div class="compare-swatch" style="background:rgba(243,208,20,0.55)"></div><span id="vc-tops-la">A</span></div>
+                        <div class="compare-legend-item"><div class="compare-swatch" style="background:rgba(0,0,0,0.3)"></div><span id="vc-tops-lb">B</span></div>
+                    </div>
+                    <div class="compare-stats" id="vc-tops-stats" style="display:none"></div>
+                </div>
+                <details class="notes" style="margin-top:12px">
+                    <summary>Sizing Notes</summary>
+                    <ul>
+                        <li><strong>Workwear runs larger</strong> than fashion brands at the same letter size</li>
+                        <li><strong>Scruffs is generous</strong> - their Small is most brands' Medium</li>
+                        <li><strong>Adidas runs small</strong> - XL overlaps many workwear L</li>
+                        <li><strong>Scandinavian brands align</strong> - Snickers, Blaklader, Helly Hansen</li>
+                        <li><strong>Always use body measurements</strong> for the most reliable cross-brand comparison</li>
+                    </ul>
+                </details>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TROUSERS TAB ==================== -->
+    <div id="tab-trousers" class="tab-content">
+        <div class="page-layout">
+            <div class="main-col">
+                <div class="panel">
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" onclick="setMode('trs','brand',this)">I know my brand & size</button>
+                        <button class="mode-btn" onclick="setMode('trs','measure',this)">I know my waist measurement</button>
+                    </div>
+                    <div id="trs-mode-brand" class="mode-section active">
+                        <div class="form-row">
+                            <div class="form-group"><label>Brand</label>
+                                <select id="trs-brand" onchange="onTrsBrandChange()">
+                                    <option value="">Select brand...</option>
+                                    <optgroup label="European Sizing">
+                                        <option value="snickers">Snickers Workwear</option>
+                                        <option value="blaklader">Blaklader</option>
+                                    </optgroup>
+                                    <optgroup label="Waist in Inches (most brands)">
+                                        <option value="standard_inches">Standard waist inches</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="form-group" id="trs-size-group"><label>Size</label><select id="trs-size" onchange="runTrsCompare()"><option value="">Select size...</option></select></div>
+                            <div class="form-group" id="trs-snickers-input-group" style="display:none"><label>Your size number</label><input type="number" id="trs-snickers-num" placeholder="e.g. 52, 152, 250..." min="40" max="700" step="2" style="background-image:none;padding-right:12px" onchange="lookupSnickersSize()"></div>
+                        </div>
+                        <div id="snickers-helper" style="display:none">
+                            <div class="snickers-help">
+                                <strong>Snickers have 2 product codes for trousers.</strong> They either start with a <span class="code-badge">3</span> or a <span class="code-badge">6</span> depending on the style. These have different size guides.<br><br>
+                                <strong>Check the label on your trousers and select below:</strong>
+                            </div>
+                            <div style="display:flex;gap:8px;margin:10px 0">
+                                <button id="sn-code-3" class="btn" style="flex:1;padding:10px;font-size:0.85rem;background:#fff;color:var(--text);border:2px solid var(--border)" onclick="setSnickersCode('3')">My code starts with a <strong>3</strong><br><span style="font-size:0.75rem;font-weight:400;opacity:0.7">e.g. 3212, 3214, 3312, 3314</span></button>
+                                <button id="sn-code-6" class="btn" style="flex:1;padding:10px;font-size:0.85rem;background:#fff;color:var(--text);border:2px solid var(--border)" onclick="setSnickersCode('6')">My code starts with a <strong>6</strong><br><span style="font-size:0.75rem;font-weight:400;opacity:0.7">e.g. 6200, 6251, 6341, 6903</span></button>
+                            </div>
+                            <div id="snickers-match-info" style="font-size:0.85rem;font-weight:700;min-height:1.2em"></div>
+                        </div>
+                        <div class="form-row" style="margin-top:8px">
+                            <div class="form-group"><label>The fit of this item is</label>
+                                <div class="fit-selector" id="trs-curfit-sel">
+                                    <button class="fit-btn" data-fit="slim" onclick="setCurFit('trs','slim')">Tight</button>
+                                    <button class="fit-btn" data-fit="fitted" onclick="setCurFit('trs','fitted')">Fitted</button>
+                                    <button class="fit-btn active" data-fit="regular" onclick="setCurFit('trs','regular')">Regular</button>
+                                    <button class="fit-btn" data-fit="relaxed" onclick="setCurFit('trs','relaxed')">Relaxed</button>
+                                    <button class="fit-btn" data-fit="loose" onclick="setCurFit('trs','loose')">Loose</button>
+                                </div>
+                            </div>
+                            <div class="form-group"><label>What fit would you like?</label>
+                                <div class="fit-selector" id="trs-fit-sel">
+                                    <button class="fit-btn" data-fit="slim" onclick="setFit('trs','slim')">Slim</button>
+                                    <button class="fit-btn" data-fit="fitted" onclick="setFit('trs','fitted')">Fitted</button>
+                                    <button class="fit-btn active" data-fit="regular" onclick="setFit('trs','regular')">Regular</button>
+                                    <button class="fit-btn" data-fit="relaxed" onclick="setFit('trs','relaxed')">Relaxed</button>
+                                    <button class="fit-btn" data-fit="loose" onclick="setFit('trs','loose')">Loose</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="trs-mode-measure" class="mode-section">
+                        <div class="form-row-3">
+                            <div class="form-group"><label>Waist</label><input type="number" id="trs-waist" placeholder="e.g. 34" min="24" max="60" step="0.5"></div>
+                            <div class="form-group"><label>Unit</label><div class="unit-toggle"><button class="unit-btn active trs-unit" data-unit="in" onclick="setTrsUnit('in')">Inches</button><button class="unit-btn trs-unit" data-unit="cm" onclick="setTrsUnit('cm')">CM</button></div></div>
+                            <div class="form-group"><label>Your Height</label>
+                                <select id="trs-height">
+                                    <option value="regular">Regular (170-182cm / 5'7"-6')</option>
+                                    <option value="xshort">Extra Short (146-158cm)</option>
+                                    <option value="short">Short (158-174cm)</option>
+                                    <option value="long">Long (182-194cm)</option>
+                                    <option value="xlong">Extra Long (194-206cm)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:10px"><label>Preferred Fit</label>
+                            <div class="fit-selector" id="trs-fit-sel2">
+                                <button class="fit-btn" data-fit="slim" onclick="setFit('trs','slim')">Slim</button>
+                                <button class="fit-btn" data-fit="fitted" onclick="setFit('trs','fitted')">Fitted</button>
+                                <button class="fit-btn active" data-fit="regular" onclick="setFit('trs','regular')">Regular</button>
+                                <button class="fit-btn" data-fit="relaxed" onclick="setFit('trs','relaxed')">Relaxed</button>
+                                <button class="fit-btn" data-fit="loose" onclick="setFit('trs','loose')">Loose</button>
+                            </div>
+                        </div>
+                        <button class="btn" onclick="runTrsMeasure()">Find My Trouser Sizes</button>
+                    </div>
+                </div>
+                <div id="trs-results">
+                    <div class="empty"><h4>Select a brand and size, or enter your waist measurement</h4><p>We'll show you the equivalent trouser size across all brands</p></div>
+                </div>
+            </div>
+            <div class="side-col">
+                <div class="panel compare-panel">
+                    <h3>Visual Compare</h3>
+                    <div class="form-group"><label>Brand A</label><select id="vc-trs-a" onchange="updateVCSizes('trs','a')"><option value="">Select...</option></select></div>
+                    <div class="form-group" style="margin-top:6px"><label>Size</label><select id="vc-trs-sa" onchange="drawVC('trs')"><option value="">-</option></select></div>
+                    <div class="compare-vs">VS</div>
+                    <div class="form-group"><label>Brand B</label><select id="vc-trs-b" onchange="updateVCSizes('trs','b')"><option value="">Select...</option></select></div>
+                    <div class="form-group" style="margin-top:6px"><label>Size</label><select id="vc-trs-sb" onchange="drawVC('trs')"><option value="">-</option></select></div>
+                    <div class="compare-canvas" id="vc-trs-canvas"><div class="compare-empty">Select two brands & sizes to compare visually</div></div>
+                    <div class="compare-legend" id="vc-trs-legend" style="display:none">
+                        <div class="compare-legend-item"><div class="compare-swatch" style="background:rgba(243,208,20,0.55)"></div><span id="vc-trs-la">A</span></div>
+                        <div class="compare-legend-item"><div class="compare-swatch" style="background:rgba(0,0,0,0.3)"></div><span id="vc-trs-lb">B</span></div>
+                    </div>
+                    <div class="compare-stats" id="vc-trs-stats" style="display:none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FOOTWEAR TAB ==================== -->
+    <div id="tab-footwear" class="tab-content">
+        <div class="panel">
+            <h3>Footwear Size Converter</h3>
+            <div class="form-row-3">
+                <div class="form-group"><label>Size System</label><select id="foot-sys" onchange="updateFootOpts();convertFoot()"><option value="uk">UK</option><option value="us">US (Men's)</option><option value="eu">EU</option><option value="cm">Foot length (cm)</option></select></div>
+                <div class="form-group"><label>Your Size</label><select id="foot-size" onchange="convertFoot()"><option value="">Select...</option></select></div>
+                <div></div>
+            </div>
+            <table class="fw-table"><thead><tr><th>UK</th><th>US (Men's)</th><th>EU</th><th>Length (cm)</th></tr></thead><tbody id="foot-body"></tbody></table>
+        </div>
+        <details class="notes" style="margin-top:12px">
+            <summary>Footwear Notes</summary>
+            <ul>
+                <li>Safety boots may run slightly different due to protective toe caps - consider half size up</li>
+                <li>US Men's = UK + 1 (approx) | EU = UK + 33 (approx)</li>
+                <li>Women's US = Men's US + 1.5 to 2 sizes</li>
+                <li>Always try on safety footwear with the socks you'd normally wear on site</li>
+            </ul>
+        </details>
+    </div>
+    </div>
+
+<script>
+    // =====================================================
+    // DATA
+    // =====================================================
+    const brands = {
+        // --- WORKWEAR BRANDS ---
+        dickies: {
+            name: "Dickies",
+            category: "workwear",
+            origin: "USA",
+            note: "",
+            tops: {
+                XS:  { chest_low: 33, chest_high: 35, waist_low: 24, waist_high: 26 },
+                S:   { chest_low: 36, chest_high: 38, waist_low: 27, waist_high: 29 },
+                M:   { chest_low: 39, chest_high: 41, waist_low: 30, waist_high: 32 },
+                L:   { chest_low: 42, chest_high: 45, waist_low: 33, waist_high: 36 },
+                XL:  { chest_low: 46, chest_high: 49, waist_low: 37, waist_high: 40 },
+                XXL: { chest_low: 50, chest_high: 53, waist_low: 41, waist_high: 44 },
+                "3XL": { chest_low: 54, chest_high: 57, waist_low: 45, waist_high: 48 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        carhartt: {
+            name: "Carhartt",
+            category: "workwear",
+            origin: "USA",
+            note: "Runs generous / relaxed fit",
+            tops: {
+                S:   { chest_low: 34, chest_high: 38, waist_low: 28.5, waist_high: 32.5 },
+                M:   { chest_low: 38, chest_high: 42, waist_low: 32.5, waist_high: 36.5 },
+                L:   { chest_low: 42, chest_high: 46, waist_low: 36.5, waist_high: 39.5 },
+                XL:  { chest_low: 46, chest_high: 50, waist_low: 39.5, waist_high: 41.5 },
+                "2XL": { chest_low: 50, chest_high: 54, waist_low: 41.5, waist_high: 43.5 },
+                "3XL": { chest_low: 54, chest_high: 58, waist_low: 43.5, waist_high: 45.5 },
+                "4XL": { chest_low: 58, chest_high: 62, waist_low: 45.5, waist_high: 47.5 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        snickers: {
+            name: "Snickers Workwear",
+            category: "workwear",
+            origin: "Sweden",
+            note: "Also uses EU numeric sizing",
+            tops: {
+                XS:  { chest_low: 31, chest_high: 35, waist_low: 26, waist_high: 30 },
+                S:   { chest_low: 35, chest_high: 38, waist_low: 30, waist_high: 33 },
+                M:   { chest_low: 38, chest_high: 41, waist_low: 33, waist_high: 37 },
+                L:   { chest_low: 41, chest_high: 45, waist_low: 37, waist_high: 40 },
+                XL:  { chest_low: 45, chest_high: 49, waist_low: 40, waist_high: 44 },
+                XXL: { chest_low: 49, chest_high: 55, waist_low: 44, waist_high: 50 },
+                "3XL": { chest_low: 55, chest_high: 61, waist_low: 50, waist_high: 57 }
+            },
+            trousers: {
+                type: "waist_inches",
+                leg_lengths: ["28in Extra Short", "30in Short", "32in Regular", "35in Long", "37in Extra Long"]
+            }
+        },
+        helly_hansen: {
+            name: "Helly Hansen Workwear",
+            category: "workwear",
+            origin: "Norway",
+            note: "",
+            tops: {
+                XS:  { chest_low: 33, chest_high: 36, waist_low: 29, waist_high: 31.5 },
+                S:   { chest_low: 36, chest_high: 38, waist_low: 31.5, waist_high: 33 },
+                M:   { chest_low: 39, chest_high: 40.5, waist_low: 34.5, waist_high: 35.5 },
+                L:   { chest_low: 42.5, chest_high: 43, waist_low: 37.5, waist_high: 38 },
+                XL:  { chest_low: 45.5, chest_high: 46, waist_low: 40, waist_high: 42 },
+                "2XL": { chest_low: 48.5, chest_high: 49, waist_low: 43, waist_high: 45 },
+                "3XL": { chest_low: 50.5, chest_high: 52, waist_low: 45, waist_high: 47 },
+                "4XL": { chest_low: 53.5, chest_high: 55, waist_low: 48, waist_high: 50 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        caterpillar: {
+            name: "Caterpillar (CAT)",
+            category: "workwear",
+            origin: "USA",
+            note: "",
+            tops: {
+                XS:  { chest_low: 32, chest_high: 34, waist_low: 25, waist_high: 27 },
+                S:   { chest_low: 35, chest_high: 37, waist_low: 28, waist_high: 30 },
+                M:   { chest_low: 38, chest_high: 40, waist_low: 32, waist_high: 34 },
+                L:   { chest_low: 41, chest_high: 43, waist_low: 35, waist_high: 37 },
+                XL:  { chest_low: 44, chest_high: 46, waist_low: 38, waist_high: 40 },
+                XXL: { chest_low: 47, chest_high: 49, waist_low: 41, waist_high: 43 },
+                "3XL": { chest_low: 50, chest_high: 53, waist_low: 44, waist_high: 46 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        dewalt: {
+            name: "DeWalt",
+            category: "workwear",
+            origin: "UK/USA",
+            note: "",
+            tops: {
+                S:   { chest_low: 36, chest_high: 38, waist_low: null, waist_high: null },
+                M:   { chest_low: 39, chest_high: 41, waist_low: null, waist_high: null },
+                L:   { chest_low: 42, chest_high: 44, waist_low: null, waist_high: null },
+                XL:  { chest_low: 45, chest_high: 47, waist_low: null, waist_high: null },
+                XXL: { chest_low: 48, chest_high: 50, waist_low: null, waist_high: null }
+            },
+            trousers: {
+                type: "waist_inches",
+                leg_lengths: ["29in Short", "31in Regular", "33in Long"]
+            }
+        },
+        scruffs: {
+            name: "Scruffs",
+            category: "workwear",
+            origin: "UK",
+            note: "Runs generous - sizes up vs most brands",
+            tops: {
+                S:   { chest_low: 38, chest_high: 40, waist_low: null, waist_high: null },
+                M:   { chest_low: 42, chest_high: 44, waist_low: null, waist_high: null },
+                L:   { chest_low: 44, chest_high: 46, waist_low: null, waist_high: null },
+                XL:  { chest_low: 46, chest_high: 48, waist_low: null, waist_high: null },
+                XXL: { chest_low: 48, chest_high: 50, waist_low: null, waist_high: null }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        stanley: {
+            name: "Stanley Workwear",
+            category: "workwear",
+            origin: "UK",
+            note: "",
+            tops: {
+                M:   { chest_low: 39, chest_high: 41, waist_low: null, waist_high: null },
+                L:   { chest_low: 41, chest_high: 43, waist_low: null, waist_high: null },
+                XL:  { chest_low: 43, chest_high: 45, waist_low: null, waist_high: null },
+                XXL: { chest_low: 45, chest_high: 47, waist_low: null, waist_high: null },
+                "3XL": { chest_low: 47, chest_high: 49, waist_low: null, waist_high: null }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        apache: {
+            name: "Apache",
+            category: "workwear",
+            origin: "UK",
+            note: "",
+            tops: {
+                S:   { chest_low: 36, chest_high: 38, waist_low: null, waist_high: null },
+                M:   { chest_low: 39, chest_high: 41, waist_low: null, waist_high: null },
+                L:   { chest_low: 42, chest_high: 44, waist_low: null, waist_high: null },
+                XL:  { chest_low: 45, chest_high: 47, waist_low: null, waist_high: null },
+                XXL: { chest_low: 48, chest_high: 50, waist_low: null, waist_high: null }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        site: {
+            name: "Site (Screwfix)",
+            category: "workwear",
+            origin: "UK",
+            note: "",
+            tops: {
+                S:   { chest_low: 36, chest_high: 38, waist_low: null, waist_high: null },
+                M:   { chest_low: 39, chest_high: 41, waist_low: null, waist_high: null },
+                L:   { chest_low: 42, chest_high: 44, waist_low: null, waist_high: null },
+                XL:  { chest_low: 45, chest_high: 47, waist_low: null, waist_high: null },
+                XXL: { chest_low: 48, chest_high: 50, waist_low: null, waist_high: null }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        portwest: {
+            name: "Portwest",
+            category: "workwear",
+            origin: "Ireland",
+            note: "Also uses numeric chest sizing",
+            tops: {
+                XS:  { chest_low: 28, chest_high: 30, waist_low: 26, waist_high: 28 },
+                S:   { chest_low: 34, chest_high: 38, waist_low: 30, waist_high: 32 },
+                M:   { chest_low: 40, chest_high: 41, waist_low: 33, waist_high: 34 },
+                L:   { chest_low: 42, chest_high: 44, waist_low: 36, waist_high: 38 },
+                XL:  { chest_low: 46, chest_high: 48, waist_low: 40, waist_high: 41 },
+                XXL: { chest_low: 50, chest_high: 52, waist_low: 42, waist_high: 44 },
+                "3XL": { chest_low: 54, chest_high: 55, waist_low: 46, waist_high: 50 },
+                "4XL": { chest_low: 56, chest_high: 58, waist_low: 48, waist_high: 56 },
+                "5XL": { chest_low: 60, chest_high: 64, waist_low: 52, waist_high: 56 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        blaklader: {
+            name: "Blaklader",
+            category: "workwear",
+            origin: "Sweden",
+            note: "Also uses EU numeric (C42, C46 etc.)",
+            tops: {
+                XS:  { chest_low: 31, chest_high: 35, waist_low: 26, waist_high: 30 },
+                S:   { chest_low: 35, chest_high: 38, waist_low: 30, waist_high: 33 },
+                M:   { chest_low: 38, chest_high: 40, waist_low: 33, waist_high: 36 },
+                L:   { chest_low: 40, chest_high: 43, waist_low: 35, waist_high: 39 },
+                XL:  { chest_low: 43, chest_high: 45, waist_low: 39, waist_high: 41 },
+                XXL: { chest_low: 45, chest_high: 48, waist_low: 41, waist_high: 44 },
+                "3XL": { chest_low: 48, chest_high: 50, waist_low: 44, waist_high: 47 },
+                "4XL": { chest_low: 49, chest_high: 52, waist_low: 47, waist_high: 49 }
+            },
+            trousers: {
+                type: "european_numeric",
+                note: "C-sizes: C42-C70 Normal, D84-D136 Short, C146-C158 Long"
+            }
+        },
+        fristads: {
+            name: "Fristads",
+            category: "workwear",
+            origin: "Sweden",
+            note: "Sister brand to Kansas. Uses EU numeric sizing.",
+            tops: {
+                XS:  { chest_low: 31, chest_high: 35, waist_low: 27, waist_high: 31 },
+                S:   { chest_low: 35, chest_high: 39, waist_low: 31, waist_high: 35 },
+                M:   { chest_low: 39, chest_high: 43, waist_low: 35, waist_high: 39 },
+                L:   { chest_low: 43, chest_high: 47, waist_low: 39, waist_high: 43 },
+                XL:  { chest_low: 47, chest_high: 51, waist_low: 43, waist_high: 47 },
+                XXL: { chest_low: 51, chest_high: 55, waist_low: 47, waist_high: 51 },
+                "3XL": { chest_low: 55, chest_high: 59, waist_low: 51, waist_high: 55 }
+            },
+            trousers: {
+                type: "european_numeric",
+                note: "Uses C-sizes. Available in Short, Regular, and Long legs.",
+                leg_lengths: ["Short", "Regular", "Long"]
+            }
+        },
+        engelbert_strauss: {
+            name: "Engelbert Strauss",
+            category: "workwear",
+            origin: "Germany",
+            note: "Ranges from 2XS to 7XL",
+            tops: {
+                XS:  { chest_low: 30, chest_high: 33, waist_low: 25.25, waist_high: 28.25 },
+                S:   { chest_low: 33.25, chest_high: 36.25, waist_low: 28.5, waist_high: 31.5 },
+                M:   { chest_low: 36.5, chest_high: 39.25, waist_low: 31.75, waist_high: 34.75 },
+                L:   { chest_low: 39.5, chest_high: 42.5, waist_low: 35, waist_high: 37.75 },
+                XL:  { chest_low: 42.75, chest_high: 45.75, waist_low: 38, waist_high: 41.75 },
+                "2XL": { chest_low: 46, chest_high: 48.75, waist_low: 42, waist_high: 45.75 },
+                "3XL": { chest_low: 49, chest_high: 52, waist_low: 46, waist_high: 49.5 },
+                "4XL": { chest_low: 52.25, chest_high: 55, waist_low: 49.75, waist_high: 53.5 },
+                "5XL": { chest_low: 55.25, chest_high: 58.25, waist_low: 53.75, waist_high: 57.5 }
+            },
+            trousers: {
+                type: "european_numeric",
+                note: "W28-W62. Normal, Long, Short legs."
+            }
+        },
+        mascot: {
+            name: "Mascot Workwear",
+            category: "workwear",
+            origin: "Denmark",
+            note: "Uses EU numeric sizing",
+            tops: {
+                XS:  { chest_low: 33.5, chest_high: 35.5, waist_low: null, waist_high: null },
+                S:   { chest_low: 36, chest_high: 38, waist_low: null, waist_high: null },
+                M:   { chest_low: 38.5, chest_high: 40.5, waist_low: null, waist_high: null },
+                L:   { chest_low: 41, chest_high: 42.5, waist_low: null, waist_high: null },
+                XL:  { chest_low: 43, chest_high: 45, waist_low: null, waist_high: null },
+                XXL: { chest_low: 45.5, chest_high: 47, waist_low: null, waist_high: null },
+                "3XL": { chest_low: 49, chest_high: 50.5, waist_low: null, waist_high: null },
+                "4XL": { chest_low: 52, chest_high: 53.5, waist_low: null, waist_high: null },
+                "5XL": { chest_low: 55, chest_high: 56.5, waist_low: null, waist_high: null }
+            },
+            trousers: {
+                type: "european_numeric",
+                note: "EU sizes (76, 82, 90, etc.) for waist/hip"
+            }
+        },
+        timberland_pro: {
+            name: "Timberland PRO",
+            category: "workwear",
+            origin: "USA",
+            note: "",
+            tops: {
+                S:   { chest_low: 34, chest_high: 36, waist_low: 29, waist_high: 31 },
+                M:   { chest_low: 38, chest_high: 40, waist_low: 32, waist_high: 34 },
+                L:   { chest_low: 42, chest_high: 44, waist_low: 36, waist_high: 38 },
+                XL:  { chest_low: 46, chest_high: 48, waist_low: 40, waist_high: 42 },
+                XXL: { chest_low: 50, chest_high: 52, waist_low: 44, waist_high: 46 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        jcb: {
+            name: "JCB Workwear",
+            category: "workwear",
+            origin: "UK",
+            note: "",
+            tops: {
+                S:   { chest_low: 37, chest_high: 39, waist_low: null, waist_high: null },
+                M:   { chest_low: 39, chest_high: 41, waist_low: null, waist_high: null },
+                L:   { chest_low: 41, chest_high: 44, waist_low: null, waist_high: null },
+                XL:  { chest_low: 44, chest_high: 48, waist_low: null, waist_high: null },
+                XXL: { chest_low: 48, chest_high: 51, waist_low: null, waist_high: null },
+                "3XL": { chest_low: 51, chest_high: 53, waist_low: null, waist_high: null }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        lee_cooper: {
+            name: "Lee Cooper Workwear",
+            category: "workwear",
+            origin: "UK",
+            note: "",
+            tops: {
+                XS:  { chest_low: 32, chest_high: 35, waist_low: 26, waist_high: 29 },
+                S:   { chest_low: 35, chest_high: 38, waist_low: 29, waist_high: 32 },
+                M:   { chest_low: 38, chest_high: 41, waist_low: 32, waist_high: 35 },
+                L:   { chest_low: 41, chest_high: 44, waist_low: 35, waist_high: 39 },
+                XL:  { chest_low: 44, chest_high: 48, waist_low: 39, waist_high: 42 },
+                "2XL": { chest_low: 48, chest_high: 51, waist_low: 42, waist_high: 45 },
+                "3XL": { chest_low: 51, chest_high: 54, waist_low: 45, waist_high: 48 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        regatta: {
+            name: "Regatta Professional",
+            category: "workwear",
+            origin: "UK",
+            note: "",
+            tops: {
+                XXS: { chest_low: 32, chest_high: 34, waist_low: null, waist_high: null },
+                XS:  { chest_low: 35, chest_high: 36, waist_low: null, waist_high: null },
+                S:   { chest_low: 37, chest_high: 38, waist_low: null, waist_high: null },
+                M:   { chest_low: 39, chest_high: 40, waist_low: null, waist_high: null },
+                L:   { chest_low: 41, chest_high: 42, waist_low: null, waist_high: null },
+                XL:  { chest_low: 43, chest_high: 44, waist_low: null, waist_high: null },
+                XXL: { chest_low: 46, chest_high: 48, waist_low: null, waist_high: null },
+                "3XL": { chest_low: 49, chest_high: 51, waist_low: null, waist_high: null },
+                "4XL": { chest_low: 52, chest_high: 54, waist_low: null, waist_high: null },
+                "5XL": { chest_low: 55, chest_high: 57, waist_low: null, waist_high: null }
+            },
+            trousers: {
+                type: "waist_inches",
+                leg_lengths: ["30in", "32in", "34in"]
+            }
+        },
+        result: {
+            name: "Result Work-Guard",
+            category: "workwear",
+            origin: "UK",
+            note: "",
+            tops: {
+                XS:  { chest_low: 35, chest_high: 37, waist_low: null, waist_high: null },
+                S:   { chest_low: 37, chest_high: 39.5, waist_low: null, waist_high: null },
+                M:   { chest_low: 39.5, chest_high: 42.5, waist_low: null, waist_high: null },
+                L:   { chest_low: 42.5, chest_high: 45.5, waist_low: null, waist_high: null },
+                XL:  { chest_low: 45.5, chest_high: 48.5, waist_low: null, waist_high: null },
+                "2XL": { chest_low: 48.5, chest_high: 52, waist_low: null, waist_high: null },
+                "3XL": { chest_low: 52, chest_high: 55.5, waist_low: null, waist_high: null },
+                "4XL": { chest_low: 55.5, chest_high: 60, waist_low: null, waist_high: null }
+            },
+            trousers: { type: "waist_inches" }
+        },
+
+        // --- FASHION BRANDS ---
+        nike: {
+            name: "Nike",
+            category: "fashion",
+            origin: "USA",
+            note: "",
+            tops: {
+                S:   { chest_low: 35, chest_high: 37.5, waist_low: 29, waist_high: 32 },
+                M:   { chest_low: 37.5, chest_high: 41, waist_low: 32, waist_high: 35 },
+                L:   { chest_low: 41, chest_high: 44, waist_low: 35, waist_high: 38 },
+                XL:  { chest_low: 44, chest_high: 48.5, waist_low: 38, waist_high: 43 },
+                XXL: { chest_low: 48.5, chest_high: 53.5, waist_low: 43, waist_high: 47.5 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        adidas: {
+            name: "Adidas",
+            category: "fashion",
+            origin: "Germany",
+            note: "Runs smaller than workwear brands",
+            tops: {
+                XS:  { chest_low: 32.5, chest_high: 34, waist_low: 27.5, waist_high: 29 },
+                S:   { chest_low: 34.5, chest_high: 36, waist_low: 29.5, waist_high: 31.5 },
+                M:   { chest_low: 36.5, chest_high: 39, waist_low: 32, waist_high: 34.5 },
+                L:   { chest_low: 39.5, chest_high: 42.5, waist_low: 35, waist_high: 38 },
+                XL:  { chest_low: 43, chest_high: 46.5, waist_low: 38.5, waist_high: 42 },
+                XXL: { chest_low: 47, chest_high: 50.5, waist_low: 42.5, waist_high: 46 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        under_armour: {
+            name: "Under Armour",
+            category: "fashion",
+            origin: "USA",
+            note: "",
+            tops: {
+                XS:  { chest_low: 30, chest_high: 32, waist_low: 26.5, waist_high: 27.5 },
+                S:   { chest_low: 34, chest_high: 36, waist_low: 28.5, waist_high: 30 },
+                M:   { chest_low: 38, chest_high: 40, waist_low: 31.5, waist_high: 33.5 },
+                L:   { chest_low: 42, chest_high: 44, waist_low: 35, waist_high: 37 },
+                XL:  { chest_low: 46, chest_high: 48, waist_low: 39, waist_high: 41 },
+                XXL: { chest_low: 50, chest_high: 52, waist_low: 43, waist_high: 45.5 },
+                "3XL": { chest_low: 54, chest_high: 56, waist_low: 47.5, waist_high: 50 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        north_face: {
+            name: "The North Face",
+            category: "fashion",
+            origin: "USA",
+            note: "",
+            tops: {
+                S:   { chest_low: 36, chest_high: 38, waist_low: 29, waist_high: 32 },
+                M:   { chest_low: 39, chest_high: 41, waist_low: 32, waist_high: 35 },
+                L:   { chest_low: 42, chest_high: 44, waist_low: 35, waist_high: 38 },
+                XL:  { chest_low: 45, chest_high: 48, waist_low: 38, waist_high: 42 },
+                "2XL": { chest_low: 49, chest_high: 52, waist_low: 42, waist_high: 46 },
+                "3XL": { chest_low: 53, chest_high: 56, waist_low: 46, waist_high: 50 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        columbia: {
+            name: "Columbia",
+            category: "fashion",
+            origin: "USA",
+            note: "",
+            tops: {
+                XS:  { chest_low: 32, chest_high: 35, waist_low: 26, waist_high: 29 },
+                S:   { chest_low: 35, chest_high: 38, waist_low: 29, waist_high: 32 },
+                M:   { chest_low: 38, chest_high: 41, waist_low: 32, waist_high: 35 },
+                L:   { chest_low: 42, chest_high: 45, waist_low: 36, waist_high: 39 },
+                XL:  { chest_low: 46, chest_high: 49, waist_low: 40, waist_high: 43 },
+                XXL: { chest_low: 50, chest_high: 53, waist_low: 44, waist_high: 47 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        levis: {
+            name: "Levi's",
+            category: "fashion",
+            origin: "USA",
+            note: "",
+            tops: {
+                S:   { chest_low: 35, chest_high: 37, waist_low: 29, waist_high: 31 },
+                M:   { chest_low: 38, chest_high: 40, waist_low: 32, waist_high: 34 },
+                L:   { chest_low: 41, chest_high: 43, waist_low: 35, waist_high: 37 },
+                XL:  { chest_low: 44, chest_high: 46, waist_low: 38, waist_high: 40 },
+                XXL: { chest_low: 47, chest_high: 49, waist_low: 41, waist_high: 43 }
+            },
+            trousers: { type: "waist_inches" }
+        },
+        wrangler: {
+            name: "Wrangler",
+            category: "fashion",
+            origin: "USA",
+            note: "",
+            tops: {
+                XS:  { chest_low: 34.5, chest_high: 36, waist_low: null, waist_high: null },
+                S:   { chest_low: 36.5, chest_high: 38, waist_low: null, waist_high: null },
+                M:   { chest_low: 38.5, chest_high: 40, waist_low: null, waist_high: null },
+                L:   { chest_low: 41.5, chest_high: 43.5, waist_low: null, waist_high: null },
+                XL:  { chest_low: 45, chest_high: 47, waist_low: null, waist_high: null },
+                XXL: { chest_low: 49, chest_high: 51, waist_low: null, waist_high: null }
+            },
+            trousers: { type: "waist_inches" }
+        }
+    };
+
+    // Footwear data
+    const footwearSizes = [
+        { uk: "3",    us: "4",    eu: "36",  cm: "22.5" },
+        { uk: "4",    us: "5",    eu: "37",  cm: "23.5" },
+        { uk: "5",    us: "6",    eu: "38",  cm: "24.4" },
+        { uk: "6",    us: "7",    eu: "39",  cm: "25.1" },
+        { uk: "6.5",  us: "7.5",  eu: "40",  cm: "25.7" },
+        { uk: "7",    us: "8",    eu: "41",  cm: "26.4" },
+        { uk: "8",    us: "9",    eu: "42",  cm: "27.0" },
+        { uk: "9",    us: "10",   eu: "43",  cm: "27.7" },
+        { uk: "10",   us: "11",   eu: "44",  cm: "28.3" },
+        { uk: "10.5", us: "11.5", eu: "45",  cm: "29.0" },
+        { uk: "11",   us: "12",   eu: "46",  cm: "29.6" },
+        { uk: "12",   us: "13",   eu: "47",  cm: "30.3" },
+        { uk: "13",   us: "14",   eu: "48",  cm: "30.9" },
+        { uk: "14",   us: "15",   eu: "49",  cm: "31.5" }
+    ];
+
+    // Trouser waist conversion (standard across most workwear brands)
+    const trouserWaistSizes = [28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50];
+
+    // Snickers trouser sizes (from official PDF size guide)
+    // Waist mapping is shared - size numbers change per height
+    const snickersWaist = [
+        { waist_cm: 76,  waist_in: 30 },
+        { waist_cm: 80,  waist_in: 31.5 },
+        { waist_cm: 84,  waist_in: 33 },
+        { waist_cm: 88,  waist_in: 34.5 },
+        { waist_cm: 92,  waist_in: 36 },
+        { waist_cm: 96,  waist_in: 38 },
+        { waist_cm: 100, waist_in: 39.5 },
+        { waist_cm: 104, waist_in: 41 },
+        { waist_cm: 112, waist_in: 44 },
+        { waist_cm: 120, waist_in: 47 },
+        { waist_cm: 128, waist_in: 50.5 },
+        { waist_cm: 136, waist_in: 53.5 },
+        { waist_cm: 144, waist_in: 56.5 },
+        { waist_cm: 152, waist_in: 60 }
+    ];
+
+    // 3-series (loose fit) size numbers per height
+    const snickers3Heights = {
+        xshort:  { label: "Extra Short (146-158cm / 4'10\"-5'2\")", sizes: ["188","192","196","200","204","208","212","216","220","224","228","232","536","540"] },
+        short:   { label: "Short (158-170cm / 5'2\"-5'7\")",        sizes: ["88","92","96","100","104","108","112","116","120","124","128","132","636","640"] },
+        regular: { label: "Regular (170-182cm / 5'7\"-6')",         sizes: ["44","46","48","50","52","54","56","58","60","62","64","66","68","70"] },
+        long:    { label: "Long (182-194cm / 6'-6'4\")",            sizes: ["144","146","148","150","152","154","156","158","160","162","164","166","168","170"] },
+        xlong:   { label: "Extra Long (194-206cm / 6'4\"-6'9\")",   sizes: ["244","246","248","250","252","254","256","258","260","262","264","266","268","270"] }
+    };
+
+    // 6-series (slim fit) size numbers per height
+    const snickers6Heights = {
+        xshort:  { label: "Extra Short (28\" inside leg / 70cm)", sizes: ["180","184","188","192","196","200","204","208","212","216","220","224","228","232"] },
+        short:   { label: "Short (30\" inside leg / 76cm)",       sizes: ["80","84","88","92","96","100","104","108","112","116","120","124","128","132"] },
+        regular: { label: "Regular (32\" inside leg / 82cm)",     sizes: ["42","44","46","48","50","52","54","56","58","60","62","64","66","68"] },
+        long:    { label: "Long (35\" inside leg / 88cm)",        sizes: ["142","144","146","148","150","152","154","156","158","160","162","164","166","168"] },
+        xlong:   { label: "Extra Long (37\" inside leg / 94cm)",  sizes: ["242","244","246","248","250","252","254","256","258","260","262","264","266","268"] }
+    };
+
+    // Blaklader trouser sizes (from official PDF size guide)
+    const blakladerHeights = {
+        short: {
+            label: "Short (170-174cm / D-sizes)",
+            sizes: [
+                { size: "D84",  waist_in: 30.875, uk: "30S" },
+                { size: "D88",  waist_in: 32.5,   uk: "32S" },
+                { size: "D92",  waist_in: 34,     uk: "34S" },
+                { size: "D96",  waist_in: 35.625, uk: "36S" },
+                { size: "D100", waist_in: 37.125, uk: "37S" },
+                { size: "D104", waist_in: 38.625, uk: "39S" },
+                { size: "D108", waist_in: 40.625, uk: "41S" },
+                { size: "D112", waist_in: 42.625, uk: "43S" },
+                { size: "D116", waist_in: 44.625, uk: "45S" },
+                { size: "D120", waist_in: 46.625, uk: "47S" },
+                { size: "D124", waist_in: 48.625, uk: "49S" },
+                { size: "D128", waist_in: 50.625, uk: "51S" },
+                { size: "D132", waist_in: 52.875, uk: "53S" },
+                { size: "D136", waist_in: 55.125, uk: "55S" }
+            ]
+        },
+        regular: {
+            label: "Regular (176-180cm / C-sizes)",
+            sizes: [
+                { size: "C42", waist_in: 28.5,   uk: "28R" },
+                { size: "C44", waist_in: 30.125, uk: "30R" },
+                { size: "C46", waist_in: 31.625, uk: "32R" },
+                { size: "C48", waist_in: 33.25,  uk: "33R" },
+                { size: "C50", waist_in: 34.75,  uk: "34R" },
+                { size: "C52", waist_in: 36.25,  uk: "36R" },
+                { size: "C54", waist_in: 38.25,  uk: "38R" },
+                { size: "C56", waist_in: 40.25,  uk: "40R" },
+                { size: "C58", waist_in: 42.25,  uk: "42R" },
+                { size: "C60", waist_in: 44.25,  uk: "44R" },
+                { size: "C62", waist_in: 46.25,  uk: "46R" },
+                { size: "C64", waist_in: 48.25,  uk: "48R" },
+                { size: "C66", waist_in: 50.5,   uk: "50R" },
+                { size: "C68", waist_in: 52.75,  uk: "52R" },
+                { size: "C70", waist_in: 54.875, uk: "54R" }
+            ]
+        },
+        long: {
+            label: "Long (182-186cm / C146+ sizes)",
+            sizes: [
+                { size: "C146", waist_in: 31.625, uk: "32L" },
+                { size: "C148", waist_in: 33.25,  uk: "33L" },
+                { size: "C150", waist_in: 34.75,  uk: "34L" },
+                { size: "C152", waist_in: 36.25,  uk: "36L" },
+                { size: "C154", waist_in: 38.25,  uk: "38L" },
+                { size: "C156", waist_in: 40.25,  uk: "40L" },
+                { size: "C158", waist_in: 42.25,  uk: "42L" }
+            ]
+        }
+    };
+
+    // =====================================================
+
+    // =====================================================
+    // SVG TEMPLATES
+    // =====================================================
+    const tshirtSVGContent = `<g><path style="fill:none;stroke:currentColor;stroke-width:99.7;stroke-miterlimit:22.9" d="M60.59 2772.66c0,0 98.95,-323.1 98.95,-371.25 0,-48.12 388.63,-680.68 1753.78,-1565.75 2.68,-1.74 5.84,-2.34 9.4,-1.99l-17.88 8.59c0,0 560.59,650.27 560.59,1562.73 0,20.62 2.55,361.25 6.21,843.53 -110.87,84.3 -666.69,493.37 -1160.24,610.43 0,0 -494.68,-749.27 -1250.82,-1086.29z"/><path style="fill:none;stroke:currentColor;stroke-width:99.7;stroke-miterlimit:4" d="M10030.83 2737.12c0,0 -98.95,-323.14 -98.95,-371.31 0,-48.08 -388.52,-680.38 -1753.04,-1565.23 -474.12,681.6 -521.27,1175.6 -549.57,1510.07 -19.34,228.52 -34.77,467.65 -47,711.38 10.01,106.55 17.56,175.7 17.56,175.7 0,0 629,495.01 1180.16,625.75 0,0 494.69,-749.26 1250.85,-1086.36z"/><path style="fill:none;stroke:currentColor;stroke-width:99.7;stroke-miterlimit:4" d="M1904.84 847.22c0,0 560.59,727.42 560.59,1748.15 0,82.12 32.33,4705.06 32.33,4857.55 0,152.5 -80.85,1073.73 -118.57,1114.87 0,0 1401.42,433.97 2846.04,375.19 377.03,-15.08 1541.58,-58.43 2468.73,-375.19 0,0 -129.37,-457.85 -129.37,-1091.35 0,-276.34 -86.24,-2991.84 64.68,-4986.61 28.3,-374.22 75.45,-926.95 549.79,-1689.62 0,0 -668.4,-293.26 -1034.96,-398.95 -366.48,-105.56 -840.83,-246.34 -1013.33,-316.81 -172.49,-70.34 -2231.55,-11.7 -2231.55,-11.7 0,0 -754.63,281.62 -1002.59,352.07 -247.94,70.33 -563.76,191.19 -991.79,422.39z"/><path style="fill:none;stroke:currentColor;stroke-width:99.7;stroke-miterlimit:4" d="M3923.12 61.34c0,0 390.91,637.03 1164.37,576.88 94.43,-7.34 718.18,-17.18 1033.9,-558.35 0,0 256.91,90.75 268.84,92.55 0,0 -490.04,701.88 -1315.25,733.34 -25.55,1 -871.13,96.32 -1412.18,-751.84l260.31 -92.58z"/></g>`;
+
+    const trousersSVGContent = `<g><path style="fill:currentColor" d="M59.25 1460.43c3.25,-19.02 -0.69,-14.53 29.15,-14.36l248.07 1.83 2.85 168.16 -0.4 310.26c-34.24,33.64 -203.1,12.23 -241.95,9.95 -19.97,-63.01 -9.54,-171.04 -18.84,-240.85 -10.32,-77.47 -11.57,-158.57 -18.88,-235zm750.8 101.65l-32.05 374.62 -53.01 5.02c-45.88,5.01 -151.15,9.4 -190.86,-11.71 -2.48,-60.66 -1.73,-441.39 6.53,-481.98l276.92 -0.6 -7.53 114.64zm20.7 -289.85l-2.1 23.28 -77.54 16.56c4.66,8.56 -9.36,5.1 14.54,7.51l63.71 -14.27 -10.41 133.15 -280.95 1.44 1.54 -134.65 76.03 16.22c-17.52,-20.1 -32.15,-13.09 -77.25,-26.54l-5.87 -147.68c3.81,5.53 4.51,7.89 8.62,13.58 5.43,7.53 3.26,4.81 6.53,7.46 -7.8,-22.54 -14.98,-30.97 -14.49,-57.43 14.92,-3.38 28.83,-7.88 43.59,-11.79 9.1,-2.41 35.41,-8.55 38.32,-19.63l-84.32 21.62 -13.4 -105.05c97.1,11.28 227.98,13.74 326.09,1.48l-3.65 103.94 -30.65 0.08 27.45 12.94 -5.77 157.78zm-561.18 -132.38c22.55,-8.02 23.37,-21.21 38.44,-38.25l39.73 10.92 -10.14 183.85c-10.34,1.67 -20.06,2.82 -29.94,5.28 -17.21,4.28 -21.74,11.27 -21.77,11.22 -0.54,-0.97 -2,1.94 -2.79,3.08l53.25 -10.8 4.03 134.81 -281.96 -0.83 -7.92 -133.74c16.26,4.08 60.67,19.4 73.26,6.7l-74.45 -16c-3.62,-33.79 -2.92,-61.65 -3.36,-95.3 -0.23,-17.78 1.69,-32.32 1.5,-45.89 -0.22,-16.33 -4.73,-25.8 -4.25,-43.19 11.4,-1.93 42.72,-4.38 50.15,-16.51l-55.07 6.78 -2.86 -102.87c48.35,-1.12 102.47,6.7 155.32,5.61 52.52,-1.08 106.24,-4.15 158.92,-4.65l-27.14 64.11c14.93,-17.29 19.33,-49.41 37.16,-65.48 0.97,27.45 -5.01,84.02 -16.32,103.17l-24.36 -5.9 -4.66 -22.28 -11.34 16.13 -42.46 -8.4 28.1 18.27 -19.06 40.13z"/></g>`;
+
+    // Render an overlay of two scaled garment SVGs
+    function renderCompareOverlay(canvasId, svgContent, viewBox, scaleA, scaleB, labelText) {
+        const colorA = 'rgba(243,208,20,0.55)';
+        const colorB = 'rgba(0,0,0,0.3)';
+        const [vx, vy, vw, vh] = viewBox.split(' ').map(Number);
+        const cx = vx + vw / 2;
+        const cy = vy + vh / 2;
+
+        // Bigger shape goes behind
+        const bigScale = Math.max(scaleA, scaleB);
+        const smallScale = Math.min(scaleA, scaleB);
+        const bigColor = scaleA >= scaleB ? colorA : colorB;
+        const smallColor = scaleA >= scaleB ? colorB : colorA;
+
+        // Pad viewBox to fit scaled shapes
+        const pad = vw * (bigScale - 1) / 2 + 50;
+        const newVB = `${vx - pad} ${vy - pad * 0.3} ${vw + pad * 2} ${vh + pad * 0.8}`;
+
+        const svg = `
+            <svg viewBox="${newVB}" xmlns="http://www.w3.org/2000/svg">
+                <g transform="translate(${cx},${cy}) scale(${bigScale}) translate(${-cx},${-cy})" style="color:${bigColor}">
+                    ${svgContent}
+                </g>
+                <g transform="translate(${cx},${cy}) scale(${smallScale}) translate(${-cx},${-cy})" style="color:${smallColor}">
+                    ${svgContent}
+                </g>
+                <text x="${cx}" y="${vy + vh + pad * 0.45}" text-anchor="middle" font-family="Open Sans,sans-serif" font-size="${vw * 0.035}" fill="#666">
+                    ${labelText}
+                </text>
+            </svg>
+        `;
+        document.getElementById(canvasId).innerHTML = svg;
+    }
+
+    // =====================================================
+    // STATE
+    // =====================================================
+    let topsFit = 'regular', trsFit = 'regular';
+    let topsCurFit = 'regular', trsCurFit = 'regular';
+    let topsUnit = 'in', trsUnit = 'in';
+
+    // Desired fit offset: shifts the lookup measurement to recommend bigger/smaller
+    const fitOff = { slim:-2, fitted:-1, regular:0, relaxed:1.5, loose:3 };
+    const trsFitOff = { slim:-1.5, fitted:-0.75, regular:0, relaxed:1, loose:2 };
+
+    // Current fit offset: adjusts where in the size range the person's body actually is
+    // If their current item is tight on them, their body is BIGGER than the midpoint
+    // If their current item is loose on them, their body is SMALLER than the midpoint
+    const curFitOff = { slim:1.5, fitted:0.75, regular:0, relaxed:-0.75, loose:-1.5 };
+    const trsCurFitOff = { slim:1, fitted:0.5, regular:0, relaxed:-0.5, loose:-1 };
+
+    const fitLabel = { slim:'Slim fit',fitted:'Fitted',regular:'True to size',relaxed:'Relaxed fit',loose:'Loose fit' };
+    const curFitLabel = { slim:'Tight on me',fitted:'Fitted',regular:'Regular',relaxed:'Relaxed',loose:'Loose on me' };
+
+    // =====================================================
+    // INIT
+    // =====================================================
+    function init() {
+        populateBrandSelect('tops-brand');
+        populateBrandSelect('vc-tops-a');
+        populateBrandSelect('vc-tops-b');
+        populateTrsCompareSelects();
+        buildFootTable();
+        updateFootOpts();
+    }
+
+    function populateBrandSelect(id) {
+        const sel = document.getElementById(id);
+        const w = [], f = [];
+        for (const [k,b] of Object.entries(brands)) { (b.category==='workwear'?w:f).push({k,n:b.name}); }
+        w.sort((a,b)=>a.n.localeCompare(b.n)); f.sort((a,b)=>a.n.localeCompare(b.n));
+        const wg = document.createElement('optgroup'); wg.label='Workwear';
+        w.forEach(b=>{const o=document.createElement('option');o.value=b.k;o.textContent=b.n;wg.appendChild(o);});
+        const fg = document.createElement('optgroup'); fg.label='Fashion';
+        f.forEach(b=>{const o=document.createElement('option');o.value=b.k;o.textContent=b.n;fg.appendChild(o);});
+        sel.appendChild(wg); sel.appendChild(fg);
+    }
+
+    // =====================================================
+    // UI HELPERS
+    // =====================================================
+    function switchTab(t) {
+        document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+        document.querySelector('[data-tab="'+t+'"]').classList.add('active');
+        document.getElementById('tab-'+t).classList.add('active');
+    }
+    function setMode(prefix,mode,btn) {
+        btn.parentElement.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(prefix+'-mode-brand').classList.toggle('active',mode==='brand');
+        document.getElementById(prefix+'-mode-measure').classList.toggle('active',mode==='measure');
+    }
+    function setFit(prefix,fit) {
+        if(prefix==='tops') topsFit=fit; else trsFit=fit;
+        document.querySelectorAll('#'+prefix+'-fit-sel .fit-btn, #'+prefix+'-fit-sel2 .fit-btn').forEach(b=>b.classList.toggle('active',b.dataset.fit===fit));
+        if(prefix==='tops') rerunTops(); else rerunTrs();
+    }
+    function setCurFit(prefix,fit) {
+        if(prefix==='tops') topsCurFit=fit; else trsCurFit=fit;
+        document.querySelectorAll('#'+prefix+'-curfit-sel .fit-btn').forEach(b=>b.classList.toggle('active',b.dataset.fit===fit));
+        if(prefix==='tops') rerunTops(); else rerunTrs();
+    }
+    function setTopsUnit(u) { topsUnit=u; document.querySelectorAll('.tops-unit').forEach(b=>b.classList.toggle('active',b.dataset.unit===u)); }
+    function setTrsUnit(u) { trsUnit=u; document.querySelectorAll('.trs-unit').forEach(b=>b.classList.toggle('active',b.dataset.unit===u)); }
+
+    // =====================================================
+    // TOPS COMPARISON ENGINE
+    // =====================================================
+    function getMid(d) { return (d.chest_low+d.chest_high)/2; }
+
+    function findSize(brand,chest) {
+        const sizes=brand.tops; let best=null,bd=Infinity;
+        for(const [n,d] of Object.entries(sizes)) {
+            const m=getMid(d), dist=Math.abs(chest-m);
+            if(chest>=d.chest_low&&chest<=d.chest_high) { if(!best||dist<bd){best={size:n,fit:'exact',range:d.chest_low+'-'+d.chest_high+'"'};bd=dist;} }
+            else if(dist<bd){best={size:n,fit:'close',range:d.chest_low+'-'+d.chest_high+'"'};bd=dist;}
+        }
+        const sn=Object.keys(sizes);
+        for(let i=0;i<sn.length-1;i++){const c=sizes[sn[i]],nx=sizes[sn[i+1]];if(chest>c.chest_high&&chest<nx.chest_low&&(chest-c.chest_high)<=1&&(nx.chest_low-chest)<=1){return{size:sn[i]+'/'+sn[i+1],fit:'between',range:c.chest_high+'-'+nx.chest_low+'"'};}}
+        return best;
+    }
+
+    function updateTopsSizes() {
+        const k=document.getElementById('tops-brand').value, sel=document.getElementById('tops-size');
+        sel.innerHTML='<option value="">Select size...</option>';
+        if(!k||!brands[k])return;
+        for(const s of Object.keys(brands[k].tops)){const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);}
+    }
+
+    function runTopsCompare() {
+        const k=document.getElementById('tops-brand').value, s=document.getElementById('tops-size').value;
+        if(!k||!s)return;
+        const d=brands[k].tops[s]; if(!d)return;
+        // Apply current-fit offset to estimate actual body measurement
+        const bodyChest = getMid(d) + curFitOff[topsCurFit];
+        renderTopsResults(bodyChest,k,s);
+    }
+    function runTopsMeasure() {
+        let c=parseFloat(document.getElementById('tops-chest').value); if(isNaN(c))return;
+        if(topsUnit==='cm') c/=2.54;
+        renderTopsResults(c,null,null);
+    }
+    function rerunTops() {
+        const k=document.getElementById('tops-brand').value,s=document.getElementById('tops-size').value,c=document.getElementById('tops-chest').value;
+        if(k&&s) runTopsCompare(); else if(c) runTopsMeasure();
+    }
+
+    function renderTopsResults(chest,srcKey,srcSize) {
+        const off=fitOff[topsFit], lookup=chest+off, cm=Math.round(chest*2.54);
+        const fb=topsFit!=='regular'?'<span class="fit-badge '+topsFit+'">'+fitLabel[topsFit]+'</span>':'';
+        const cfb=topsCurFit!=='regular'&&srcKey?'<span class="fit-badge '+topsCurFit+'">Current: '+curFitLabel[topsCurFit]+'</span>':'';
+        let h='<div class="results-bar"><h2>Your sizes'+cfb+fb+'</h2><span class="badge">Body: ~'+Math.round(chest*2)/2+'" / '+cm+'cm'+(off?' | sizing for '+Math.round(lookup*2)/2+'"':'')+'</span></div>';
+        h+='<div class="filter-row"><button class="filter-btn active" onclick="filterR(\'all\',this)">All</button><button class="filter-btn" onclick="filterR(\'workwear\',this)">Workwear</button><button class="filter-btn" onclick="filterR(\'fashion\',this)">Fashion</button></div>';
+        h+='<div class="results-grid">';
+        h+='<div class="cat-header" data-cat="workwear">Workwear Brands</div>';
+        Object.entries(brands).filter(([,b])=>b.category==='workwear').sort(([,a],[,b])=>a.name.localeCompare(b.name)).forEach(([k,b])=>{
+            const r=findSize(b,lookup);if(!r)return;const src=k===srcKey;
+            h+=rcCard(b,r,src,srcSize);
+        });
+        h+='<div class="cat-header" data-cat="fashion">Fashion Brands</div>';
+        Object.entries(brands).filter(([,b])=>b.category==='fashion').sort(([,a],[,b])=>a.name.localeCompare(b.name)).forEach(([k,b])=>{
+            const r=findSize(b,lookup);if(!r)return;const src=k===srcKey;
+            h+=rcCard(b,r,src,srcSize);
+        });
+        h+='</div>';
+        document.getElementById('tops-results').innerHTML=h;
+    }
+
+    function rcCard(brand,result,isSource,srcSize) {
+        const sc=result.fit==='between'?'between':'';
+        const cc=result.fit==='exact'?'conf-exact':result.fit==='close'?'conf-close':'conf-between';
+        const cl=result.fit==='exact'?'Within range':result.fit==='close'?'Closest match':'Between sizes';
+        const note=brand.note?'<span class="rc-sub">'+brand.note+'</span>':'';
+        return '<div class="result-card '+(isSource?'source':'')+'" data-category="'+brand.category+'"><div class="rc-brand"><span class="rc-name">'+brand.name+(isSource?' (yours)':'')+'</span><span class="rc-sub">'+brand.origin+' | Chest: '+result.range+'</span>'+note+'</div><div class="rc-size"><span class="rc-size-val '+sc+'">'+(isSource&&srcSize?srcSize:result.size)+'</span><span class="rc-conf '+cc+'">'+(isSource?'Your size':cl)+'</span></div></div>';
+    }
+
+    function filterR(cat,btn) {
+        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+        document.querySelectorAll('.result-card').forEach(c=>{c.style.display=cat==='all'?'flex':(c.dataset.category===cat?'flex':'none');});
+        document.querySelectorAll('.cat-header').forEach(h=>{h.style.display=cat==='all'?'block':(h.dataset.cat===cat?'block':'none');});
+    }
+
+    // =====================================================
+    // TROUSERS
+    // =====================================================
+    function findNearest(table,waist,key) {
+        let best=null,bd=Infinity,between=null;
+        for(const r of table){const rw=key==='waist_in'?r.waist_in:(r.waist_cm/2.54);const d=Math.abs(waist-rw);if(d<bd){bd=d;best=r;}}
+        for(let i=0;i<table.length-1;i++){const cw=key==='waist_in'?table[i].waist_in:(table[i].waist_cm/2.54);const nw=key==='waist_in'?table[i+1].waist_in:(table[i+1].waist_cm/2.54);if(waist>cw+0.5&&waist<nw-0.5){between={lower:table[i],upper:table[i+1]};break;}}
+        return {best,bestDist:bd,between};
+    }
+    function findSnIdx(w){let bi=0,bd=Infinity;for(let i=0;i<snickersWaist.length;i++){const d=Math.abs(w-snickersWaist[i].waist_in);if(d<bd){bd=d;bi=i;}}return{idx:bi,dist:bd};}
+
+    function onTrsBrandChange() {
+        const bk=document.getElementById('trs-brand').value, ss=document.getElementById('trs-size');
+        ss.innerHTML='<option value="">Select size...</option>';
+        const isSnickers = bk==='snickers';
+        document.getElementById('snickers-helper').style.display=isSnickers?'block':'none';
+        document.getElementById('trs-size-group').style.display=isSnickers?'none':'';
+        document.getElementById('trs-snickers-input-group').style.display=isSnickers?'':'none';
+        document.getElementById('trs-snickers-num').value='';
+        document.getElementById('snickers-match-info').textContent='';
+        snickersSelectedCode=null;
+        if(document.getElementById('sn-code-3')){document.getElementById('sn-code-3').style.borderColor='var(--border)';document.getElementById('sn-code-3').style.background='#fff';document.getElementById('sn-code-3').style.color='var(--text)';}
+        if(document.getElementById('sn-code-6')){document.getElementById('sn-code-6').style.borderColor='var(--border)';document.getElementById('sn-code-6').style.background='#fff';document.getElementById('sn-code-6').style.color='var(--text)';}
+        if(bk==='blaklader') {
+            for(const [hk,hd] of Object.entries(blakladerHeights)){
+                const g=document.createElement('optgroup');g.label=hd.label;
+                for(const r of hd.sizes){const o=document.createElement('option');o.value='bl:'+hk+':'+r.size;o.textContent=r.size+'  (waist: '+Math.round(r.waist_in*2)/2+'" / UK '+r.uk+')';g.appendChild(o);}
+                ss.appendChild(g);
+            }
+        } else if(bk==='standard_inches') {
+            trouserWaistSizes.forEach(w=>{const o=document.createElement('option');o.value='std:'+w;o.textContent=w+'"';ss.appendChild(o);});
+        }
+    }
+
+    let snickersSelectedCode = null; // '3' or '6'
+
+    function setSnickersCode(code) {
+        snickersSelectedCode = code;
+        // Style the selected button
+        document.getElementById('sn-code-3').style.borderColor = code==='3' ? 'var(--accent)' : 'var(--border)';
+        document.getElementById('sn-code-3').style.background = code==='3' ? 'var(--accent)' : '#fff';
+        document.getElementById('sn-code-3').style.color = code==='3' ? 'var(--accent-text)' : 'var(--text)';
+        document.getElementById('sn-code-6').style.borderColor = code==='6' ? 'var(--accent)' : 'var(--border)';
+        document.getElementById('sn-code-6').style.background = code==='6' ? 'var(--accent)' : '#fff';
+        document.getElementById('sn-code-6').style.color = code==='6' ? 'var(--accent-text)' : 'var(--text)';
+        // Re-run if a size is already entered
+        lookupSnickersSize();
+    }
+
+    function lookupSnickersSize() {
+        const num = document.getElementById('trs-snickers-num').value.trim();
+        const info = document.getElementById('snickers-match-info');
+        if(!num) { info.textContent=''; return; }
+        const n = parseInt(num);
+        if(isNaN(n)) { info.textContent=''; return; }
+        if(!snickersSelectedCode) {
+            info.textContent = 'Please select whether your product code starts with a 3 or 6 above';
+            info.style.color = 'var(--warning)';
+            return;
+        }
+
+        // Search the selected series only
+        const heights = snickersSelectedCode==='3' ? snickers3Heights : snickers6Heights;
+        const seriesLabel = snickersSelectedCode==='3' ? 'Loose fit (3xxx)' : 'Slim fit (6xxx)';
+        const seriesCode = snickersSelectedCode==='3' ? 'snickers_3' : 'snickers_6';
+
+        let match = null;
+        for(const [hk,hd] of Object.entries(heights)) {
+            const idx = hd.sizes.indexOf(String(n));
+            if(idx !== -1) {
+                match = { height:hk, heightLabel:hd.label, idx, waist:snickersWaist[idx] };
+                break;
+            }
+        }
+
+        if(!match) {
+            info.textContent = 'Size ' + n + ' not found in ' + seriesLabel + ' - check the number on your label';
+            info.style.color = 'var(--danger)';
+            return;
+        }
+
+        info.style.color = 'var(--success)';
+        info.textContent = 'Size ' + n + ' = ' + seriesLabel + ', ' + match.heightLabel + ' (waist ' + match.waist.waist_in + '" / ' + match.waist.waist_cm + 'cm)';
+
+        const bodyWaist = match.waist.waist_in + trsCurFitOff[trsCurFit];
+        const off = trsFitOff[trsFit];
+        renderTrsResults(bodyWaist, bodyWaist + off, seriesCode, String(n), match.height);
+    }
+
+    function runTrsCompare() {
+        const bk=document.getElementById('trs-brand').value;
+        // Handle Snickers number input separately
+        if(bk==='snickers') { lookupSnickersSize(); return; }
+        const sv=document.getElementById('trs-size').value;
+        if(!bk||!sv)return;
+        let waist,srcSize=sv,srcHeight='regular',srcBrand=bk;
+        if(sv.startsWith('sn3:')||sv.startsWith('sn6:')) {
+            const [series,hk,idx]=sv.split(':');srcHeight=hk;
+            const i=parseInt(idx);waist=snickersWaist[i].waist_in;
+            const heights=series==='sn3'?snickers3Heights:snickers6Heights;
+            srcSize=heights[hk].sizes[i];srcBrand=series==='sn3'?'snickers_3':'snickers_6';
+        } else if(sv.startsWith('bl:')) {
+            const [,hk,code]=sv.split(':');srcHeight=hk;srcSize=code;srcBrand='blaklader';
+            const h=blakladerHeights[hk];const row=h.sizes.find(r=>r.size===code);if(!row)return;waist=row.waist_in;
+        } else if(sv.startsWith('std:')) { waist=parseFloat(sv.split(':')[1]); srcBrand='standard'; }
+        else return;
+        const bodyWaist=waist+trsCurFitOff[trsCurFit];
+        const off=trsFitOff[trsFit];
+        renderTrsResults(bodyWaist,bodyWaist+off,srcBrand,srcSize,srcHeight);
+    }
+    function runTrsMeasure() {
+        let w=parseFloat(document.getElementById('trs-waist').value);if(isNaN(w))return;
+        if(trsUnit==='cm') w/=2.54;
+        const off=trsFitOff[trsFit],h=document.getElementById('trs-height').value;
+        renderTrsResults(w,w+off,null,null,h);
+    }
+    function rerunTrs() {
+        const bk=document.getElementById('trs-brand').value,sv=document.getElementById('trs-size').value,wv=document.getElementById('trs-waist').value;
+        const snNum=document.getElementById('trs-snickers-num').value;
+        if(bk==='snickers'&&snNum) lookupSnickersSize();
+        else if(bk&&sv) runTrsCompare();
+        else if(wv) runTrsMeasure();
+    }
+
+    function renderTrsResults(bodyW,lookupW,srcBrand,srcSize,srcHeight) {
+        const wi=lookupW,cm=Math.round(bodyW*2.54),off=trsFitOff[trsFit];
+        const fb=trsFit!=='regular'?'<span class="fit-badge '+trsFit+'">'+fitLabel[trsFit]+'</span>':'';
+        const cfb=trsCurFit!=='regular'&&srcBrand?'<span class="fit-badge '+trsCurFit+'">Current: '+curFitLabel[trsCurFit]+'</span>':'';
+        const hKey=srcHeight||'regular';
+        const snToBlMap={xshort:'short',short:'short',regular:'regular',long:'long',xlong:'long'};
+        const blHKey=snToBlMap[hKey]||hKey;
+        let h='<div class="results-bar"><h2>Your trouser sizes'+cfb+fb+'</h2><span class="badge">Body: ~'+Math.round(bodyW*2)/2+'" / '+cm+'cm'+(off?' | sizing for '+Math.round(wi*2)/2+'"':'')+'</span></div>';
+        h+='<div class="results-grid">';
+
+        // Standard waist
+        let near=trouserWaistSizes[0],md=Math.abs(wi-near);
+        trouserWaistSizes.forEach(s=>{const d=Math.abs(wi-s);if(d<md){md=d;near=s;}});
+        let rec=near+'"';if(md>0.5){const lo=trouserWaistSizes.filter(s=>s<wi).pop(),hi=trouserWaistSizes.find(s=>s>wi);if(lo&&hi)rec=lo+'" or '+hi+'"';}
+        const isSrcStd=srcBrand==='standard';
+        const legMap={xshort:'Short',short:'Short',regular:'Regular',long:'Long',xlong:'Long'};
+        const legLabel=legMap[hKey]||'Regular';
+        h+='<div class="cat-header">Standard Waist Inches</div>';
+        h+='<div class="result-card '+(isSrcStd?'source':'')+'"><div class="rc-brand"><span class="rc-name">Waist size in inches'+(isSrcStd?' (yours)':'')+'</span><span class="rc-sub">Dickies, Carhartt, DeWalt, Scruffs, JCB, Stanley, Apache, Site, etc.</span></div><div class="rc-size"><span class="rc-size-val">'+(isSrcStd&&srcSize?srcSize+'"':rec)+'</span><span class="rc-conf conf-exact">'+legLabel+' leg</span></div></div>';
+
+        // Snickers
+        const snW=findSnIdx(wi),sw=snickersWaist[snW.idx],snFit=snW.dist<1?'Within range':'Closest match',snCls=snW.dist<1?'conf-exact':'conf-close';
+        function snCard(name,label,heights,sb) {
+            const hd=heights[hKey]||heights['regular'];const sn=hd.sizes[snW.idx];
+            const isSrc=srcBrand===sb&&srcHeight===hKey;
+            return '<div class="result-card '+(isSrc?'source':'')+'"><div class="rc-brand"><span class="rc-name">'+name+(isSrc?' (yours)':'')+'</span><span class="rc-sub">'+hd.label+' | Waist: '+sw.waist_in+'" / '+sw.waist_cm+'cm</span></div><div class="rc-size"><span class="rc-size-val">'+(isSrc?srcSize:sn)+'</span><span class="rc-conf '+(isSrc?'conf-exact':snCls)+'">'+(isSrc?'Your size':snFit)+'</span></div></div>';
+        }
+        h+='<div class="cat-header">Snickers Workwear</div>';
+        h+=snCard('Snickers Loose fit (3xxx)','',snickers3Heights,'snickers_3');
+        h+=snCard('Snickers Slim fit (6xxx)','',snickers6Heights,'snickers_6');
+
+        // Blaklader
+        const blH=blakladerHeights[blHKey]||blakladerHeights['regular'];
+        const bl=findNearest(blH.sizes,wi,'waist_in');
+        const isSrcBl=srcBrand==='blaklader'&&srcHeight===blHKey;
+        const blSize=isSrcBl?srcSize:(bl.between?bl.between.lower.size+' or '+bl.between.upper.size:bl.best.size);
+        const blFit=isSrcBl?'Your size':(bl.between?'Between sizes':(bl.bestDist<1?'Within range':'Closest match'));
+        const blCls=isSrcBl?'conf-exact':(bl.between?'conf-between':(bl.bestDist<1?'conf-exact':'conf-close'));
+        h+='<div class="cat-header">Blaklader</div>';
+        h+='<div class="result-card '+(isSrcBl?'source':'')+'"><div class="rc-brand"><span class="rc-name">Blaklader'+(isSrcBl?' (yours)':'')+'</span><span class="rc-sub">'+blH.label+' | Waist: '+Math.round(bl.best.waist_in*2)/2+'" / UK '+(bl.best.uk||'')+'</span></div><div class="rc-size"><span class="rc-size-val '+(bl.between&&!isSrcBl?'between':'')+'">' +blSize+'</span><span class="rc-conf '+blCls+'">'+blFit+'</span></div></div>';
+
+        // Other EU brands
+        const blReg=findNearest(blakladerHeights.regular.sizes,wi,'waist_in');
+        const fSize=blReg.between?blReg.between.lower.size+'/'+blReg.between.upper.size:blReg.best.size;
+        const isShortOrLong=hKey==='xshort'||hKey==='short'||hKey==='long'||hKey==='xlong';
+        const fristadsNote=isShortOrLong?'<span class="rc-sub" style="color:var(--warning)">Fristads only offer Regular length trousers - no short or long options</span>':'';
+        h+='<div class="cat-header">Other European Brands</div>';
+        h+='<div class="result-card"><div class="rc-brand"><span class="rc-name">Fristads</span><span class="rc-sub">Sweden - C-sizes similar to Blaklader (Regular length only)</span>'+fristadsNote+'</div><div class="rc-size"><span class="rc-size-val">'+fSize+'</span><span class="rc-conf conf-close">'+(isShortOrLong?'Regular only':'Similar to Blaklader')+'</span></div></div>';
+        h+='<div class="result-card"><div class="rc-brand"><span class="rc-name">Engelbert Strauss</span><span class="rc-sub">Germany - W-sizes (W28-W62)</span></div><div class="rc-size"><span class="rc-size-val">W'+near+'</span><span class="rc-conf conf-close">Waist inches</span></div></div>';
+        const mEU=Math.round(Math.round(wi*2.54)/2);const mEUE=mEU%2===0?mEU:mEU+1;
+        h+='<div class="result-card"><div class="rc-brand"><span class="rc-name">Mascot Workwear</span><span class="rc-sub">Denmark - EU numeric sizes</span></div><div class="rc-size"><span class="rc-size-val">EU '+mEUE+'</span><span class="rc-conf conf-close">Check brand chart</span></div></div>';
+        h+='</div>';
+        document.getElementById('trs-results').innerHTML=h;
+    }
+
+    // =====================================================
+    // VISUAL COMPARE
+    // =====================================================
+    function renderOverlay(canvasId,svgContent,viewBox,scaleA,scaleB,label) {
+        const ca='rgba(243,208,20,0.55)',cb='rgba(0,0,0,0.3)';
+        const [vx,vy,vw,vh]=viewBox.split(' ').map(Number);
+        const cx=vx+vw/2,cy=vy+vh/2;
+        const bs=Math.max(scaleA,scaleB),ss=Math.min(scaleA,scaleB);
+        const bc=scaleA>=scaleB?ca:cb,sc=scaleA>=scaleB?cb:ca;
+        const padX=vw*(bs-1)/2+50;
+        const padY=vh*(bs-1)/2+50;
+        const textH=vh*0.04;
+        const nvb=(vx-padX)+' '+(vy-padY)+' '+(vw+padX*2)+' '+(vh+padY*2+textH);
+        document.getElementById(canvasId).innerHTML='<svg viewBox="'+nvb+'" xmlns="http://www.w3.org/2000/svg"><g transform="translate('+cx+','+cy+') scale('+bs+') translate('+(-cx)+','+(-cy)+')" style="color:'+bc+'">'+svgContent+'</g><g transform="translate('+cx+','+cy+') scale('+ss+') translate('+(-cx)+','+(-cy)+')" style="color:'+sc+'">'+svgContent+'</g><text x="'+cx+'" y="'+(vy+vh+padY+textH*0.6)+'" text-anchor="middle" font-family="Open Sans,sans-serif" font-size="'+Math.max(vw,vh)*0.02+'" fill="#666">'+label+'</text></svg>';
+    }
+
+    function updateVCSizes(type,side) {
+        const bk=document.getElementById('vc-'+type+'-'+side).value;
+        const sel=document.getElementById('vc-'+type+'-s'+side);
+        sel.innerHTML='<option value="">-</option>';
+        if(!bk)return;
+        if(type==='tops') {
+            if(!brands[bk])return;
+            for(const s of Object.keys(brands[bk].tops)){const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o);}
+        } else {
+            if(bk==='snickers') {
+                [['Loose (3xxx)',snickers3Heights,'sn3'],['Slim (6xxx)',snickers6Heights,'sn6']].forEach(([name,heights,prefix])=>{
+                    for(const [hk,hd] of Object.entries(heights)){
+                        const g=document.createElement('optgroup');g.label=name+' - '+hd.label;
+                        hd.sizes.forEach((sn,i)=>{const w=snickersWaist[i];const o=document.createElement('option');o.value=prefix+':'+i;o.textContent=sn+'  ('+w.waist_in+'")';g.appendChild(o);});
+                        sel.appendChild(g);
+                    }
+                });
+            } else if(bk==='blaklader') {
+                for(const [hk,hd] of Object.entries(blakladerHeights)){
+                    const g=document.createElement('optgroup');g.label=hd.label;
+                    for(const r of hd.sizes){const o=document.createElement('option');o.value='bl:'+r.waist_in;o.textContent=r.size+'  ('+Math.round(r.waist_in*2)/2+'")';g.appendChild(o);}
+                    sel.appendChild(g);
+                }
+            } else if(bk==='standard') {
+                trouserWaistSizes.forEach(w=>{const o=document.createElement('option');o.value='w:'+w;o.textContent=w+'"';sel.appendChild(o);});
+            } else if(brands[bk]) {
+                trouserWaistSizes.forEach(w=>{const o=document.createElement('option');o.value='w:'+w;o.textContent=w+'"';sel.appendChild(o);});
+            }
+        }
+    }
+
+    function populateTrsCompareSelects() {
+        ['vc-trs-a','vc-trs-b'].forEach(id=>{
+            const sel=document.getElementById(id);
+            const ng=document.createElement('optgroup');ng.label='European Sizing';
+            [['snickers','Snickers Workwear'],['blaklader','Blaklader']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;ng.appendChild(o);});
+            sel.appendChild(ng);
+            const sg=document.createElement('optgroup');sg.label='Standard Waist Inches';
+            const all=[...Object.entries(brands).filter(([,b])=>b.category==='workwear').sort(([,a],[,b])=>a.name.localeCompare(b.name)),...Object.entries(brands).filter(([,b])=>b.category==='fashion').sort(([,a],[,b])=>a.name.localeCompare(b.name))];
+            all.forEach(([k,b])=>{const o=document.createElement('option');o.value=k;o.textContent=b.name;sg.appendChild(o);});
+            sel.appendChild(sg);
+        });
+    }
+
+    function parseVCWaist(sv) {
+        if(!sv)return null;
+        if(sv.startsWith('sn3:')||sv.startsWith('sn6:')) return snickersWaist[parseInt(sv.split(':')[1])].waist_in;
+        if(sv.startsWith('bl:')) return parseFloat(sv.split(':')[1]);
+        if(sv.startsWith('w:')) return parseFloat(sv.split(':')[1]);
+        return null;
+    }
+
+    function drawVC(type) {
+        const va=document.getElementById('vc-'+type+'-sa').value;
+        const vb=document.getElementById('vc-'+type+'-sb').value;
+        if(!va||!vb)return;
+
+        if(type==='tops') {
+            const ka=document.getElementById('vc-tops-a').value,kb=document.getElementById('vc-tops-b').value;
+            if(!brands[ka]||!brands[kb])return;
+            const da=brands[ka].tops[va],db=brands[kb].tops[vb];if(!da||!db)return;
+            const ca=getMid(da),cb=getMid(db);
+            renderOverlay('vc-tops-canvas',tshirtSVGContent,'0 0 10091.41 8998.31',ca/40,cb/40,ca+'" vs '+cb+'" chest');
+            document.getElementById('vc-tops-legend').style.display='flex';
+            document.getElementById('vc-tops-la').textContent=brands[ka].name+' '+va+' ('+ca+'")';
+            document.getElementById('vc-tops-lb').textContent=brands[kb].name+' '+vb+' ('+cb+'")';
+            showStats('vc-tops-stats',ca,cb,'Chest');
+        } else {
+            const wa=parseVCWaist(va),wb=parseVCWaist(vb);if(wa===null||wb===null)return;
+            renderOverlay('vc-trs-canvas',trousersSVGContent,'0 0 858.79 1958',wa/36,wb/36,wa+'" vs '+wb+'" waist');
+            document.getElementById('vc-trs-legend').style.display='flex';
+            const la=document.getElementById('vc-trs-sa'),lb=document.getElementById('vc-trs-sb');
+            document.getElementById('vc-trs-la').textContent=(la.options[la.selectedIndex].textContent||'')+' ('+wa+'")';
+            document.getElementById('vc-trs-lb').textContent=(lb.options[lb.selectedIndex].textContent||'')+' ('+wb+'")';
+            showStats('vc-trs-stats',wa,wb,'Waist');
+        }
+    }
+
+    function showStats(id,a,b,label) {
+        const diff=Math.abs(a-b),dcm=Math.round(diff*2.54),pct=((Math.max(a,b)/Math.min(a,b)-1)*100).toFixed(1);
+        const el=document.getElementById(id);el.style.display='grid';
+        el.innerHTML='<div class="cstat"><div class="cstat-val">'+diff.toFixed(1)+'" / '+dcm+'cm</div><div class="cstat-lbl">'+label+' Diff</div></div><div class="cstat"><div class="cstat-val">'+pct+'%</div><div class="cstat-lbl">Difference</div></div><div class="cstat"><div class="cstat-val">'+(a>b?'A':(b>a?'B':'Same'))+'</div><div class="cstat-lbl">'+(a===b?'Identical':'Runs Bigger')+'</div></div>';
+    }
+
+    // =====================================================
+    // FOOTWEAR
+    // =====================================================
+    function buildFootTable() {
+        const tb=document.getElementById('foot-body');
+        footwearSizes.forEach(r=>{const tr=document.createElement('tr');tr.innerHTML='<td>'+r.uk+'</td><td>'+r.us+'</td><td>'+r.eu+'</td><td>'+r.cm+'</td>';tb.appendChild(tr);});
+    }
+    function updateFootOpts() {
+        const sys=document.getElementById('foot-sys').value,sel=document.getElementById('foot-size');
+        sel.innerHTML='<option value="">Select...</option>';
+        footwearSizes.forEach((r,i)=>{const o=document.createElement('option');o.value=i;o.textContent=r[sys];sel.appendChild(o);});
+    }
+    function convertFoot() {
+        const idx=parseInt(document.getElementById('foot-size').value);
+        document.querySelectorAll('#foot-body tr').forEach((r,i)=>r.classList.toggle('highlight',i===idx));
+        if(!isNaN(idx)){const rows=document.querySelectorAll('#foot-body tr');if(rows[idx])rows[idx].scrollIntoView({behavior:'smooth',block:'center'});}
+    }
+
+    // =====================================================
+    // BOOT
+    // =====================================================
+    init();
+</script>
+</body>
+</html>
